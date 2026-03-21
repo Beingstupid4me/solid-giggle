@@ -1,0 +1,161 @@
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+
+export type CaseSeverity = "critical" | "urgent" | "routine";
+
+export interface DispatchCase {
+  id: string;
+  patientName: string;
+  complaint: string;
+  distanceKm: number;
+  receivedLabel: string;
+  severity: CaseSeverity;
+  priorityLevel: 1 | 3 | 5;
+  age: number;
+  accepted: boolean;
+}
+
+export interface VitalsForm {
+  systolic: string;
+  diastolic: string;
+  temperature: string;
+  spo2: string;
+  heartRate: string;
+  bloodSugar: string;
+}
+
+interface FieldNodePortalState {
+  dutyOn: boolean;
+  profile: {
+    unitCode: string;
+    roleName: string;
+    shiftLabel: string;
+  };
+  networkOnline: boolean;
+  activeCaseId: string | null;
+  queue: DispatchCase[];
+  vitals: VitalsForm;
+  toggleDuty: () => void;
+  setNetworkOnline: (online: boolean) => void;
+  acceptCase: (caseId: string) => void;
+  passCase: (caseId: string) => void;
+  setActiveCase: (caseId: string | null) => void;
+  updateVitals: (data: Partial<VitalsForm>) => void;
+  clearVitals: () => void;
+}
+
+const initialQueue: DispatchCase[] = [
+  {
+    id: "case-001",
+    patientName: "Jonathan S. Whitaker",
+    complaint: "Acute chest pain, difficulty breathing",
+    distanceKm: 1.2,
+    receivedLabel: "Received 4m ago",
+    severity: "critical",
+    priorityLevel: 1,
+    age: 64,
+    accepted: false,
+  },
+  {
+    id: "case-002",
+    patientName: "Elena Rodriguez",
+    complaint: "Diabetic ketoacidosis symptoms",
+    distanceKm: 3.8,
+    receivedLabel: "Received 12m ago",
+    severity: "urgent",
+    priorityLevel: 3,
+    age: 58,
+    accepted: false,
+  },
+  {
+    id: "case-003",
+    patientName: "Marcus Chen",
+    complaint: "Post-op wound inspection",
+    distanceKm: 5.5,
+    receivedLabel: "Scheduled 14:30",
+    severity: "routine",
+    priorityLevel: 5,
+    age: 34,
+    accepted: false,
+  },
+];
+
+const initialVitals: VitalsForm = {
+  systolic: "120",
+  diastolic: "80",
+  temperature: "36.6",
+  spo2: "98",
+  heartRate: "72",
+  bloodSugar: "132",
+};
+
+export const useFieldNodePortalStore = create<FieldNodePortalState>()(
+  persist(
+    (set) => ({
+      dutyOn: true,
+      profile: {
+        unitCode: "Unit 42",
+        roleName: "Paramedic Alpha",
+        shiftLabel: "08:00 - 20:00",
+      },
+      networkOnline: false,
+      activeCaseId: "case-001",
+      queue: initialQueue,
+      vitals: initialVitals,
+
+      toggleDuty: () =>
+        set((state) => ({
+          dutyOn: !state.dutyOn,
+        })),
+
+      setNetworkOnline: (online) =>
+        set({
+          networkOnline: online,
+        }),
+
+      acceptCase: (caseId) =>
+        set((state) => ({
+          activeCaseId: caseId,
+          queue: state.queue.map((item) => (item.id === caseId ? { ...item, accepted: true } : item)),
+        })),
+
+      passCase: (caseId) =>
+        set((state) => {
+          const filtered = state.queue.filter((item) => item.id !== caseId);
+          const nextActive = state.activeCaseId === caseId ? filtered[0]?.id ?? null : state.activeCaseId;
+          return {
+            queue: filtered,
+            activeCaseId: nextActive,
+          };
+        }),
+
+      setActiveCase: (caseId) =>
+        set({
+          activeCaseId: caseId,
+        }),
+
+      updateVitals: (data) =>
+        set((state) => ({
+          vitals: {
+            ...state.vitals,
+            ...data,
+          },
+        })),
+
+      clearVitals: () =>
+        set({
+          vitals: initialVitals,
+        }),
+    }),
+    {
+      name: "field-node-portal-store",
+      partialize: (state) => ({
+        dutyOn: state.dutyOn,
+        networkOnline: state.networkOnline,
+        activeCaseId: state.activeCaseId,
+        queue: state.queue,
+        vitals: state.vitals,
+      }),
+    },
+  ),
+);

@@ -1,0 +1,13 @@
+export { Navbar } from "./Navbar";
+export { Hero } from "./Hero";
+export { StatsBar } from "./StatsBar";
+export { Features } from "./Features";
+export { Journey } from "./Journey";
+export { Insights } from "./Insights";
+export { Testimonials } from "./Testimonials";
+export { Accreditations } from "./Accreditations";
+export { Footer } from "./Footer";
+export { MobileStickyBar } from "./MobileStickyBar";
+export { FloatingSidebar } from "./FloatingSidebar";
+export { TopBanner } from "./TopBanner";
+export { SanocareAdvantage } from "./SanocareAdvantage";

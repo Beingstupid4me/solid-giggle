@@ -1,0 +1,19 @@
+{
+  "name": "Sanocare",
+  "short_name": "Sanocare",
+  "description": "Healthcare at Your Doorstep - Doctor Home Visits, Teleconsultations, Nursing Care & Lab Tests",
+  "id": "/portal",
+  "start_url": "/portal",
+  "scope": "/portal",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

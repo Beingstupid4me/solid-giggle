@@ -1,0 +1,53 @@
+{
+  "button": {
+    "primary": {
+      "radius": "pill",
+      "background": "color.primary",
+      "backgroundHover": "color.primaryDark",
+      "text": "color.surfaceLight",
+      "fontWeight": "font.weight.bold",
+      "shadow": "shadow.brand"
+    },
+    "outline": {
+      "radius": "pill",
+      "border": "color.primary",
+      "text": "color.primary",
+      "backgroundHover": "color.primary",
+      "textHover": "color.surfaceLight"
+    },
+    "ghost": {
+      "radius": "xl",
+      "text": "color.textMain",
+      "textHover": "color.primary"
+    }
+  },
+  "input": {
+    "radius": "xl",
+    "border": "#e2e8f0",
+    "background": "rgba(255, 255, 255, 0.5)",
+    "backgroundFocus": "#ffffff",
+    "borderFocus": "color.primary",
+    "ringFocus": "rgba(43, 140, 238, 0.1)",
+    "label": {
+      "size": "font.size.xs",
+      "weight": "font.weight.bold",
+      "tracking": "font.tracking.widest",
+      "case": "uppercase"
+    }
+  },
+  "card": {
+    "default": {
+      "radius": "2xl",
+      "background": "color.surfaceLight",
+      "border": "#f1f5f9",
+      "shadow": "shadow.md"
+    },
+    "glass": {
+      "radius": "2xl",
+      "background": "rgba(255, 255, 255, 0.8)",
+      "border": "rgba(255, 255, 255, 0.6)",
+      "blur": "blur.glass",
+      "shadow": "shadow.glass"
+    }
+  }
+}

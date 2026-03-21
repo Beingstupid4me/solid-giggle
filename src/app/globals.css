@@ -1,0 +1,204 @@
+@import "tailwindcss";
+@import "../design-system/tokens.css";
+
+@theme inline {
+  /* Brand Colors */
+  --color-primary: var(--ds-color-primary);
+  --color-primary-dark: var(--ds-color-primary-dark);
+  --color-background-light: var(--ds-color-background-light);
+  --color-background-dark: var(--ds-color-background-dark);
+  --color-surface-light: var(--ds-color-surface-light);
+  --color-surface-dark: var(--ds-color-surface-dark);
+  --color-text-main: var(--ds-color-text-main);
+  --color-text-secondary: var(--ds-color-text-secondary);
+  --color-accent: var(--ds-color-accent);
+  --color-glass: rgba(255, 255, 255, 0.7);
+  --color-glass-dark: rgba(30, 41, 54, 0.7);
+  
+  /* Fonts */
+  --font-display: var(--font-manrope), system-ui, sans-serif;
+  --font-serif: var(--font-playfair), Georgia, serif;
+}
+
+/* Custom utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 20px 40px -10px rgba(43, 140, 238, 0.1);
+}
+
+.dark .glass-panel {
+  background: rgba(30, 41, 54, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
+}
+
+/* DNA Pattern Background */
+.bg-dna-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%232b8cee' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Selection */
+::selection {
+  background: rgba(43, 140, 238, 0.3);
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--ds-color-background-light);
+  color: var(--ds-color-text-main);
+}
+
+/* Text shadow utility */
+.text-shadow-sm {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Glow effect for primary button */
+.btn-glow {
+  box-shadow: 0 0 20px rgba(43, 140, 238, 0.4);
+}
+
+.btn-glow:hover {
+  box-shadow: 0 0 30px rgba(43, 140, 238, 0.6);
+}
+
+/* ===== OPS DASHBOARD THEME ===== */
+
+/* Dark theme (default for ops) */
+.ops-dark {
+  --ops-bg: var(--ds-ops-dark-bg);
+  --ops-surface: var(--ds-ops-dark-surface);
+  --ops-surface-hover: var(--ds-ops-dark-surface-hover);
+  --ops-border: var(--ds-ops-dark-border);
+  --ops-text: var(--ds-ops-dark-text);
+  --ops-text-secondary: var(--ds-ops-dark-text-secondary);
+  --ops-text-muted: var(--ds-ops-dark-text-muted);
+}
+
+/* Light theme for ops */
+.ops-light {
+  --ops-bg: var(--ds-ops-light-bg);
+  --ops-surface: var(--ds-ops-light-surface);
+  --ops-surface-hover: var(--ds-ops-light-surface-hover);
+  --ops-border: var(--ds-ops-light-border);
+  --ops-text: var(--ds-ops-light-text);
+  --ops-text-secondary: var(--ds-ops-light-text-secondary);
+  --ops-text-muted: var(--ds-ops-light-text-muted);
+}
+
+/* Apply theme variables */
+.ops-dark, .ops-light {
+  min-height: 100vh;
+}
+
+.ops-bg {
+  background-color: var(--ops-bg);
+}
+
+.ops-surface {
+  background-color: var(--ops-surface);
+}
+
+.ops-text {
+  color: var(--ops-text);
+}
+
+.ops-text-secondary {
+  color: var(--ops-text-secondary);
+}
+
+/* ===== PORTAL THEME (SCOPED) ===== */
+
+.portal-theme-dark .portal-app,
+[data-portal-theme="dark"] .portal-app {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+.portal-theme-dark .portal-app .bg-white,
+.portal-theme-dark .portal-app .bg-white\/80,
+.portal-theme-dark .portal-app .bg-white\/85,
+.portal-theme-dark .portal-app .bg-white\/90,
+.portal-theme-dark .portal-app .bg-white\/95,
+[data-portal-theme="dark"] .portal-app .bg-white,
+[data-portal-theme="dark"] .portal-app .bg-white\/80,
+[data-portal-theme="dark"] .portal-app .bg-white\/85,
+[data-portal-theme="dark"] .portal-app .bg-white\/90,
+[data-portal-theme="dark"] .portal-app .bg-white\/95 {
+  background-color: #111827 !important;
+}
+
+.portal-theme-dark .portal-app .bg-slate-50,
+.portal-theme-dark .portal-app .bg-slate-100,
+.portal-theme-dark .portal-app .bg-slate-200,
+.portal-theme-dark .portal-app .bg-slate-200\/70,
+.portal-theme-dark .portal-app .bg-slate-100\/90,
+[data-portal-theme="dark"] .portal-app .bg-slate-50,
+[data-portal-theme="dark"] .portal-app .bg-slate-100,
+[data-portal-theme="dark"] .portal-app .bg-slate-200,
+[data-portal-theme="dark"] .portal-app .bg-slate-200\/70,
+[data-portal-theme="dark"] .portal-app .bg-slate-100\/90 {
+  background-color: #1f2937 !important;
+}
+
+.portal-theme-dark .portal-app .text-slate-900,
+.portal-theme-dark .portal-app .text-slate-800,
+.portal-theme-dark .portal-app .text-slate-700,
+[data-portal-theme="dark"] .portal-app .text-slate-900,
+[data-portal-theme="dark"] .portal-app .text-slate-800,
+[data-portal-theme="dark"] .portal-app .text-slate-700 {
+  color: #e2e8f0 !important;
+}
+
+.portal-theme-dark .portal-app .text-slate-600,
+.portal-theme-dark .portal-app .text-slate-500,
+.portal-theme-dark .portal-app .text-slate-400,
+[data-portal-theme="dark"] .portal-app .text-slate-600,
+[data-portal-theme="dark"] .portal-app .text-slate-500,
+[data-portal-theme="dark"] .portal-app .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.portal-theme-dark .portal-app .border-slate-100,
+.portal-theme-dark .portal-app .border-slate-200,
+.portal-theme-dark .portal-app .border-slate-200\/50,
+.portal-theme-dark .portal-app .border-slate-200\/70,
+.portal-theme-dark .portal-app .border-slate-300,
+[data-portal-theme="dark"] .portal-app .border-slate-100,
+[data-portal-theme="dark"] .portal-app .border-slate-200,
+[data-portal-theme="dark"] .portal-app .border-slate-200\/50,
+[data-portal-theme="dark"] .portal-app .border-slate-200\/70,
+[data-portal-theme="dark"] .portal-app .border-slate-300 {
+  border-color: #334155 !important;
+}
+
+.portal-theme-dark .portal-app input,
+.portal-theme-dark .portal-app textarea,
+.portal-theme-dark .portal-app select,
+[data-portal-theme="dark"] .portal-app input,
+[data-portal-theme="dark"] .portal-app textarea,
+[data-portal-theme="dark"] .portal-app select {
+  background-color: #111827;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+
