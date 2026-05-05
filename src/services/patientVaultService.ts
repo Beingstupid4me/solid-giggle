@@ -63,6 +63,9 @@ export interface ProfileRow {
   phone: string;
   full_name: string;
   role: string;
+  blood_group?: string | null;
+  allergies?: string | null;
+  avatar_url?: string | null;
 }
 
 /* ─── Enriched consultation for the UI ─── */
@@ -90,6 +93,7 @@ export interface EnrichedConsultation {
     temperature: string;
     spo2: string;
     heartRate: string;
+    bloodSugar: string;
   } | null;
 }
 
@@ -278,6 +282,7 @@ function enrichConsultation(row: any): EnrichedConsultation {
   const serviceTypeLabels: Record<string, string> = {
     homecare: "Homecare",
     teleconsult: "Teleconsultation",
+          bloodSugar: "--",
     diagnostics: "Diagnostics",
     "Doctor Home Visit": "Doctor Home Visit",
     "Nursing Care": "Nursing Care",
@@ -312,6 +317,7 @@ function enrichConsultation(row: any): EnrichedConsultation {
           heartRate: latestVitals.heart_rate
             ? `${latestVitals.heart_rate} bpm`
             : "--",
+          bloodSugar: "--",
         }
       : null,
   };

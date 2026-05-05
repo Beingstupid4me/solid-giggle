@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { supabase } from './supabase';
+import { supabase } from '@/lib/supabase';
 import backendAPI from '@/lib/backendApi';
 import type {
   Profile,
@@ -15,7 +15,7 @@ import type {
   RiskTag,
   APIResponse,
   PaginatedResponse,
-} from './supabase-types';
+} from '@/lib/supabase-types';
 
 // ============================================================================
 // AUTHENTICATION HOOKS
@@ -290,7 +290,7 @@ export function useMedicServices() {
     setLoading(true);
     setError(null);
     try {
-      const { data: session } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       const medicId = session?.user?.id;
 
       const { error: err } = await supabase
@@ -336,7 +336,7 @@ export function useMedicServices() {
       setLoading(true);
       setError(null);
       try {
-        const { data: session } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         const medicId = session?.user?.id;
 
         const { data: vitals, error: err } = await supabase
@@ -387,7 +387,7 @@ export function useMedicServices() {
       batteryPercent?: number;
     }) => {
       try {
-        const { data: session } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         const medicId = session?.user?.id;
 
         // Update medic's live location
@@ -476,7 +476,7 @@ export function useDoctorServices() {
       setLoading(true);
       setError(null);
       try {
-        const { data: session } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         const doctorId = session?.user?.id;
 
         const { data: notes, error: err } = await supabase
@@ -513,7 +513,7 @@ export function useDoctorServices() {
     setLoading(true);
     setError(null);
     try {
-      const { data: session } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       const doctorId = session?.user?.id;
 
       // Generate room ID

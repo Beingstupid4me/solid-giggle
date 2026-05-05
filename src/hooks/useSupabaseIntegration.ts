@@ -15,6 +15,7 @@ import {
 import { useDoctorPortalStore } from '@/store/doctorPortalStore';
 import { useFieldNodePortalStore } from '@/store/fieldNodePortalStore';
 import { usePortalAuthStore } from '@/store/portalAuthStore';
+import type { DispatchCase } from '@/store/fieldNodePortalStore';
 
 export const useSupabaseIntegration = () => ({
   doctorServices,
@@ -188,7 +189,7 @@ export const useDispatchQueue = () => {
     try {
       const result = await fieldNodeServices.getDispatchQueue();
       if (result.success) {
-        const normalized = (result.data || []).map((item: any) => ({
+        const normalized: DispatchCase[] = (result.data || []).map((item: any): DispatchCase => ({
           id: item.id,
           patientName: item.consultations?.[0]?.profiles?.[0]?.full_name || item.consultations?.[0]?.patient_name || 'Patient',
           patient_name: item.consultations?.[0]?.profiles?.[0]?.full_name || item.consultations?.[0]?.patient_name || 'Patient',

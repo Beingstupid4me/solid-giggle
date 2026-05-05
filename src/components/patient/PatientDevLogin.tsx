@@ -176,7 +176,7 @@ export function PatientDevLogin() {
   };
 
   /* ─── Animation variants ─── */
-  const containerVariants = {
+  const containerVariants: any = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -184,7 +184,7 @@ export function PatientDevLogin() {
     },
   };
 
-  const itemVariants = {
+  const itemVariants: any = {
     hidden: { opacity: 0, y: 16 },
     visible: {
       opacity: 1,
