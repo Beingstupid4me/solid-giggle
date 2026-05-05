@@ -1,7 +1,11 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, ShieldCheck, TriangleAlert } from "lucide-react";
 import { useDoctorPortalStore } from "@/store/doctorPortalStore";
+import { useCloseCase, useSaveSOAPNotes } from "@/hooks/useSupabaseIntegration";
+import { supabaseBrowser } from "@/lib/supabase";
 
 const riskCards = [
   {
@@ -28,7 +32,73 @@ const riskCards = [
 ] as const;
 
 export default function DoctorCaseClosePage() {
-  const { riskTag, setRiskTag } = useDoctorPortalStore();
+  const router = useRouter();
+  const { riskTag, setRiskTag, selectedCaseId, soap } = useDoctorPortalStore();
+  const [confirmed, setConfirmed] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const { closeCase } = useCloseCase();
+  const { saveSOAPNotes } = useSaveSOAPNotes();
+
+  // Load prescriptions
+  useEffect(() => {
+    if (!selectedCaseId) return;
+
+    const loadPrescriptions = async () => {
+      const { data } = await supabaseBrowser
+        .from("prescriptions")
+        .select("*")
+        .eq("consultation_id", selectedCaseId)
+        .order("created_at", { ascending: false });
+
+      if (data) setPrescriptions(data);
+    };
+
+    loadPrescriptions();
+  }, [selectedCaseId]);
+
+  const handleFinalize = async () => {
+    if (!selectedCaseId) {
+      setError("No case selected");
+      return;
+    }
+
+    if (!confirmed) {
+      setError("Please confirm the details are accurate");
+      return;
+    }
+
+    if (!riskTag) {
+      setError("Please select a risk classification");
+      return;
+    }
+
+    setIsClosing(true);
+    setError(null);
+
+    try {
+      // Save SOAP notes first
+      const soapResult = await saveSOAPNotes(selectedCaseId, {
+        subjective: soap.subjective,
+        objective: soap.objective,
+        assessment: soap.assessment,
+        plan: soap.plan,
+      });
+
+      if (!soapResult.success) throw new Error(soapResult.error);
+
+      // Close case with risk tag
+      const closeResult = await closeCase(selectedCaseId, riskTag);
+      if (!closeResult.success) throw new Error(closeResult.error);
+
+      // Redirect to queue after successful close
+      router.push("/portal/doctor/queue");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to close case");
+      setIsClosing(false);
+    }
+  };
 
   return (
     <section className="pb-20 md:pb-0">
@@ -67,20 +137,21 @@ export default function DoctorCaseClosePage() {
               <button className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Edit Items</button>
             </div>
             <div className="space-y-2 rounded-lg bg-slate-100 p-3">
-              <article className="flex items-center justify-between rounded-md bg-white p-3 text-sm">
-                <div>
-                  <p className="font-semibold">Lisinopril 10mg</p>
-                  <p className="text-xs text-slate-500">Take one tablet daily in the morning.</p>
-                </div>
-                <span className="rounded bg-cyan-100 px-2 py-0.5 text-[10px] font-semibold uppercase">30 day supply</span>
-              </article>
-              <article className="flex items-center justify-between rounded-md bg-white p-3 text-sm">
-                <div>
-                  <p className="font-semibold">Metformin 500mg (XR)</p>
-                  <p className="text-xs text-slate-500">Two tablets once daily with evening meal.</p>
-                </div>
-                <span className="rounded bg-cyan-100 px-2 py-0.5 text-[10px] font-semibold uppercase">90 day supply</span>
-              </article>
+              {prescriptions.length === 0 ? (
+                <p className="text-sm text-slate-600 p-3 text-center">No prescriptions added yet</p>
+              ) : (
+                prescriptions.map((rx) => (
+                  <article key={rx.id} className="flex items-center justify-between rounded-md bg-white p-3 text-sm">
+                    <div>
+                      <p className="font-semibold">{rx.medication_name} {rx.dosage}</p>
+                      <p className="text-xs text-slate-500">{rx.instructions}</p>
+                    </div>
+                    <span className="rounded bg-cyan-100 px-2 py-0.5 text-[10px] font-semibold uppercase">
+                      {rx.quantity} {rx.unit}
+                    </span>
+                  </article>
+                ))
+              )}
             </div>
           </section>
 
@@ -90,8 +161,12 @@ export default function DoctorCaseClosePage() {
               <p className="mt-2 text-sm text-slate-600">
                 I certify that medications and clinical status are based on professional judgment and current examination.
               </p>
-              <label className="mt-3 inline-flex items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-xs font-medium text-slate-700">
-                <input type="checkbox" />
+              <label className="mt-3 inline-flex items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-xs font-medium text-slate-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={confirmed}
+                  onChange={(e) => setConfirmed(e.target.checked)}
+                />
                 I confirm these details are accurate and final.
               </label>
             </div>
@@ -103,10 +178,27 @@ export default function DoctorCaseClosePage() {
           </section>
         </div>
 
+        {error && (
+          <div className="border-t border-red-200 bg-red-50 px-5 py-4 text-red-700 md:px-8">
+            <p className="font-semibold">Error:</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
+
         <footer className="flex flex-wrap items-center justify-between gap-3 bg-slate-100 px-5 py-4 md:px-8">
-          <button className="rounded-md bg-white px-4 py-2 text-sm font-medium text-slate-700">Discard Changes</button>
-          <button className="rounded-md bg-primary px-5 py-2 text-sm font-semibold uppercase tracking-[0.12em] text-white">
-            Finalize and Sign
+          <button
+            onClick={() => router.back()}
+            disabled={isClosing}
+            className="rounded-md bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-50"
+          >
+            {isClosing ? "Saving..." : "Discard Changes"}
+          </button>
+          <button
+            onClick={handleFinalize}
+            disabled={isClosing}
+            className="rounded-md bg-primary px-5 py-2 text-sm font-semibold uppercase tracking-[0.12em] text-white disabled:opacity-50"
+          >
+            {isClosing ? "Finalizing..." : "Finalize and Sign"}
           </button>
         </footer>
       </div>

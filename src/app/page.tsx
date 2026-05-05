@@ -1,5 +1,3 @@
-"use client";
-
 import { DNABackground } from "@/components/ui";
 import {
   Navbar,
@@ -16,6 +14,7 @@ import {
   TopBanner,
   SanocareAdvantage,
 } from "@/components";
+
 
 export default function Home() {
   return (

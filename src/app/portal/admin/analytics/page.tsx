@@ -1,19 +1,38 @@
 "use client";
 
-const kpis = [
-  { label: "Avg Response Time", value: "4.2m", target: "< 30m target", tone: "text-primary" },
-  { label: "Consultations Today", value: "142", target: "+18% vs yesterday", tone: "text-slate-900" },
-  { label: "Revenue Generated", value: "Rs 1.28L", target: "Projected EOD Rs 2.9L", tone: "text-emerald-700" },
-] as const;
+import { useEffect, useState } from "react";
+import { useAllCases } from "@/hooks/useSupabaseIntegration";
 
 const carehubRows = [
-  { name: "North HQ", response: "3.9m", consultations: 54, utilization: "86%" },
-  { name: "East Branch", response: "5.1m", consultations: 31, utilization: "79%" },
-  { name: "West Hub", response: "4.6m", consultations: 27, utilization: "83%" },
-  { name: "South Relay", response: "4.8m", consultations: 30, utilization: "81%" },
+  { name: "North HQ", response: "3.9m", consultations: 0, utilization: "86%" },
+  { name: "East Branch", response: "5.1m", consultations: 0, utilization: "79%" },
+  { name: "West Hub", response: "4.6m", consultations: 0, utilization: "83%" },
+  { name: "South Relay", response: "4.8m", consultations: 0, utilization: "81%" },
 ] as const;
 
 export default function AdminAnalyticsPage() {
+  const [kpis, setKpis] = useState([
+    { label: "Avg Response Time", value: "4.2m", target: "< 30m target", tone: "text-primary" },
+    { label: "Consultations Today", value: "0", target: "+18% vs yesterday", tone: "text-slate-900" },
+    { label: "Revenue Generated", value: "Rs 0", target: "Projected EOD Rs 2.9L", tone: "text-emerald-700" },
+  ]);
+  const { getAllCases } = useAllCases();
+
+  useEffect(() => {
+    const loadAnalytics = async () => {
+      const result = await getAllCases({ limit: 1000 });
+      if (result && result.data) {
+        const count = result.data.length;
+        const revenue = count * 499; // Base rate per consultation
+        setKpis((prev) => [
+          ...prev,
+          { ...prev[1], value: count.toString() },
+          { ...prev[2], value: `Rs ${(revenue / 100000).toFixed(2)}L` },
+        ]);
+      }
+    };
+    loadAnalytics();
+  }, [getAllCases]);
   return (
     <section className="space-y-5">
       <header>

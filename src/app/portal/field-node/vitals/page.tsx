@@ -1,12 +1,68 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Activity, ArrowRight, Droplets, PhoneCall, Thermometer, Wind } from "lucide-react";
 import { FieldBottomNav, FieldTopBar } from "@/components/field-node/FieldNodeScaffold";
 import { useFieldNodePortalStore } from "@/store/fieldNodePortalStore";
+import backendAPI from "@/lib/backendApi";
+import { queueOfflineVital } from "@/lib/offlineVitalsDb";
 
 export default function FieldVitalsCapturePage() {
-  const { networkOnline, setNetworkOnline, vitals, updateVitals } = useFieldNodePortalStore();
+  const { networkOnline, setNetworkOnline, vitals, updateVitals, activeConsultationId } = useFieldNodePortalStore();
+  const [submitting, setSubmitting] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Auto-save vitals on change (debounced)
+  useEffect(() => {
+    if (!activeConsultationId) return;
+
+    const timer = setTimeout(async () => {
+      setSubmitting(true);
+      try {
+        const payload = {
+          sbp: Number(vitals.systolic) || null,
+          dbp: Number(vitals.diastolic) || null,
+          hr: Number(vitals.hr || vitals.heartRate) || null,
+          temp: Number(vitals.temperature) || null,
+          spo2: Number(vitals.spo2) || null,
+          bloodSugar: Number(vitals.bloodSugar) || null,
+        };
+
+        if (!networkOnline) {
+          await queueOfflineVital({
+            consultationId: activeConsultationId,
+            syncKey: `offline-${activeConsultationId}-${Date.now()}`,
+            capturedAt: new Date().toISOString(),
+            ...payload,
+          });
+          setLastSaved(new Date().toLocaleTimeString());
+          setError(null);
+          return;
+        }
+
+        const result = await backendAPI.submitVitals(activeConsultationId, {
+          ...payload,
+          syncKey: `online-${activeConsultationId}-${Date.now()}`,
+          capturedAt: new Date().toISOString(),
+        });
+
+        if (result.success) {
+          setLastSaved(new Date().toLocaleTimeString());
+          setError(null);
+        } else {
+          setError(result.error || "Failed to save vitals");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error saving vitals");
+      } finally {
+        setSubmitting(false);
+      }
+    }, 1000); // Debounce saves 1 second after last input
+
+    return () => clearTimeout(timer);
+  }, [vitals, networkOnline, activeConsultationId]);
 
   return (
     <div className="pb-28 md:pb-8">
@@ -113,8 +169,24 @@ export default function FieldVitalsCapturePage() {
           </div>
 
           <div className="rounded-xl bg-white p-4 shadow-(--ds-shadow-sm)">
+            {error && (
+              <div className="mb-3 rounded-lg bg-red-50 p-3 text-red-700 border border-red-200">
+                <p className="text-sm font-semibold">Error: {error}</p>
+              </div>
+            )}
+
             <p className="text-sm italic text-slate-600">
-              {networkOnline ? "Synced to cloud in real-time." : "Saving locally. Data will sync upon reconnection."}
+              {submitting ? (
+                <span className="text-slate-700">Saving...</span>
+              ) : networkOnline ? (
+                lastSaved ? (
+                  <span className="text-emerald-700">✓ Synced at {lastSaved}</span>
+                ) : (
+                  "Ready to sync to cloud."
+                )
+              ) : (
+                "Offline mode. Data will sync upon reconnection."
+              )}
             </p>
             <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
               <Link
@@ -124,7 +196,7 @@ export default function FieldVitalsCapturePage() {
                 Next: Treatment
                 <ArrowRight className="h-5 w-5" />
               </Link>
-              <button className="inline-flex h-11 items-center justify-center rounded-lg bg-red-700 px-5 text-sm font-semibold text-white">
+              <button className="inline-flex h-11 items-center justify-center rounded-lg bg-red-700 px-5 text-sm font-semibold text-white transition hover:bg-red-800">
                 <PhoneCall className="mr-2 h-4 w-4" />
                 Call Doctor
               </button>

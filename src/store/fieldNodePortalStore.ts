@@ -22,6 +22,8 @@ export interface VitalsForm {
   spo2: string;
   heartRate: string;
   bloodSugar: string;
+  hr: string;
+  rr: string;
 }
 
 interface FieldNodePortalState {
@@ -33,6 +35,7 @@ interface FieldNodePortalState {
   };
   networkOnline: boolean;
   activeCaseId: string | null;
+  activeConsultationId: string | null;
   queue: DispatchCase[];
   vitals: VitalsForm;
   toggleDuty: () => void;
@@ -87,6 +90,8 @@ const initialVitals: VitalsForm = {
   spo2: "98",
   heartRate: "72",
   bloodSugar: "132",
+  hr: "72",
+  rr: "18",
 };
 
 export const useFieldNodePortalStore = create<FieldNodePortalState>()(
@@ -100,6 +105,7 @@ export const useFieldNodePortalStore = create<FieldNodePortalState>()(
       },
       networkOnline: false,
       activeCaseId: "case-001",
+      activeConsultationId: "case-001",
       queue: initialQueue,
       vitals: initialVitals,
 
@@ -116,6 +122,7 @@ export const useFieldNodePortalStore = create<FieldNodePortalState>()(
       acceptCase: (caseId) =>
         set((state) => ({
           activeCaseId: caseId,
+          activeConsultationId: caseId,
           queue: state.queue.map((item) => (item.id === caseId ? { ...item, accepted: true } : item)),
         })),
 
@@ -126,12 +133,14 @@ export const useFieldNodePortalStore = create<FieldNodePortalState>()(
           return {
             queue: filtered,
             activeCaseId: nextActive,
+            activeConsultationId: nextActive,
           };
         }),
 
       setActiveCase: (caseId) =>
         set({
           activeCaseId: caseId,
+          activeConsultationId: caseId,
         }),
 
       updateVitals: (data) =>
@@ -139,6 +148,8 @@ export const useFieldNodePortalStore = create<FieldNodePortalState>()(
           vitals: {
             ...state.vitals,
             ...data,
+            hr: data.hr ?? data.heartRate ?? state.vitals.hr,
+            heartRate: data.heartRate ?? data.hr ?? state.vitals.heartRate,
           },
         })),
 
@@ -153,6 +164,7 @@ export const useFieldNodePortalStore = create<FieldNodePortalState>()(
         dutyOn: state.dutyOn,
         networkOnline: state.networkOnline,
         activeCaseId: state.activeCaseId,
+        activeConsultationId: state.activeConsultationId,
         queue: state.queue,
         vitals: state.vitals,
       }),

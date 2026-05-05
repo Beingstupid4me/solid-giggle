@@ -19,10 +19,14 @@ interface BookingConfirmationProps {
 }
 
 export function BookingConfirmation({ booking, onBookAgain, variant = "card" }: BookingConfirmationProps) {
-  const bookedAtLabel = new Date(booking.confirmedAt).toLocaleTimeString("en-IN", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  const timeAgo = () => {
+    const elapsed = Date.now() - booking.confirmedAt;
+    const minutes = Math.floor(elapsed / 60000);
+    if (minutes < 1) return "Just now";
+    if (minutes === 1) return "1 minute ago";
+    if (minutes < 60) return `${minutes} minutes ago`;
+    return "Recently";
+  };
 
   const servicePrice = SERVICE_PRICING[booking.serviceCategory]?.price || 0;
 
@@ -55,7 +59,7 @@ export function BookingConfirmation({ booking, onBookAgain, variant = "card" }: 
       <div className={`bg-slate-50 rounded-xl p-4 mb-4 text-left ${variant === "modal" ? "mx-0" : ""}`}>
         <div className="flex items-center gap-2 text-xs text-text-secondary mb-3">
           <Clock className="w-3 h-3" />
-          Booked at {bookedAtLabel}
+          Booked {timeAgo()}
         </div>
         
         <div className="space-y-3">

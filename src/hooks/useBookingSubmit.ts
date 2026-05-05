@@ -18,6 +18,7 @@ export function useBookingSubmit() {
     location, 
     gpsLocation, 
     serviceCategory,
+    isBookingForOther,
     setSubmitting,
     setConfirmedBooking,
   } = useBookingStore();
@@ -124,7 +125,7 @@ export function useBookingSubmit() {
     } finally {
       setSubmitting(false);
     }
-  }, [name, phone, location, gpsLocation, serviceCategory, setSubmitting, setConfirmedBooking]);
+  }, [name, phone, location, gpsLocation, serviceCategory, isBookingForOther, setSubmitting, setConfirmedBooking]);
 
   return { submitBooking };
 }

@@ -23,6 +23,7 @@ export function useGeolocation() {
 
       // Watch position for better accuracy - takes multiple readings
       let bestPosition: GeolocationPosition | null = null;
+      let watchId: number;
       let attempts = 0;
       const maxAttempts = 5;
 
@@ -74,7 +75,7 @@ export function useGeolocation() {
       };
 
       // Use watchPosition for continuous updates to get best accuracy
-      const watchId = navigator.geolocation.watchPosition(
+      watchId = navigator.geolocation.watchPosition(
         processPosition,
         handleError,
         HIGH_ACCURACY_OPTIONS

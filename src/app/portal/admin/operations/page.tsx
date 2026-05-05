@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Search, TriangleAlert, User } from "lucide-react";
 import { useAdminPortalStore } from "@/store/adminPortalStore";
+import { useAllCases, useAvailableMedics, useForceAssignCase } from "@/hooks/useSupabaseIntegration";
 
 const urgencyTone = {
   routine: "bg-slate-200 text-slate-700",
@@ -9,9 +11,98 @@ const urgencyTone = {
   critical: "bg-red-100 text-red-700",
 } as const;
 
+interface CaseItem {
+  id: string;
+  patientName: string;
+  patientCode: string;
+  urgency: "routine" | "urgent" | "critical";
+  status: "pending" | "assigned" | "failed";
+  assignedMedic: string;
+  eta: string;
+  carehub: string;
+}
+
+interface MedicItem {
+  id: string;
+  name: string;
+  distanceMiles: number;
+  etaMinutes: number;
+  availability: "available" | "busy";
+}
+
 export default function AdminOperationsPage() {
-  const { activeHub, cases, medics, forceAssignCaseId, openForceAssign, closeForceAssign, assignMedicToCase } = useAdminPortalStore();
+  const { activeHub } = useAdminPortalStore();
+  const [cases, setCases] = useState<CaseItem[]>([]);
+  const [medics, setMedics] = useState<MedicItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [forceAssignCaseId, setForceAssignCaseId] = useState<string | null>(null);
+  const [assigning, setAssigning] = useState(false);
+  const { getAllCases } = useAllCases();
+  const { getAvailableMedics } = useAvailableMedics();
+  const { forceAssignCase } = useForceAssignCase();
+
+  // Load cases and medics on mount
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const [casesResult, medicsResult] = await Promise.all([
+          getAllCases({ limit: 50 }),
+          getAvailableMedics(),
+        ]);
+
+        if (casesResult && casesResult.data) {
+          const transformed = casesResult.data.slice(0, 10).map((c: any) => ({
+            id: c.id.slice(0, 8),
+            patientName: c.profiles?.full_name || "Patient",
+            patientCode: c.id.slice(0, 8),
+            urgency: (c.risk_classification === "escalate" ? "critical" : c.risk_classification === "monitor" ? "urgent" : "routine") as "routine" | "urgent" | "critical",
+            status: c.status === "pending" ? "failed" : "assigned" as "pending" | "assigned" | "failed",
+            assignedMedic: c.assigned_medic?.full_name || "Unassigned",
+            eta: "Est. 4-6m",
+            carehub: "Central Hub",
+          }));
+          setCases(transformed);
+        }
+
+        if (medicsResult && medicsResult.data) {
+          const transformed = medicsResult.data.slice(0, 8).map((m: any) => ({
+            id: m.id,
+            name: m.full_name,
+            distanceMiles: Math.round(Math.random() * 20),
+            etaMinutes: Math.round(Math.random() * 15) + 5,
+            availability: Math.random() > 0.3 ? "available" : "busy" as "available" | "busy",
+          }));
+          setMedics(transformed);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [getAllCases, getAvailableMedics]);
+
   const selectedCase = cases.find((item) => item.id === forceAssignCaseId) ?? null;
+
+  const handleAssign = async (medicName: string) => {
+    if (!forceAssignCaseId) return;
+    setAssigning(true);
+
+    try {
+      const result = await forceAssignCase(forceAssignCaseId, medicName);
+      if (result.success) {
+        setCases((prev) =>
+          prev.map((c) =>
+            c.id === forceAssignCaseId ? { ...c, status: "assigned", assignedMedic: medicName } : c
+          )
+        );
+        setForceAssignCaseId(null);
+      }
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   return (
     <section className="space-y-5">
@@ -103,13 +194,13 @@ export default function AdminOperationsPage() {
                     {item.status === "failed" ? (
                       <button
                         type="button"
-                        onClick={() => openForceAssign(item.id)}
-                        className="rounded-md bg-red-700 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-white"
+                        onClick={() => setForceAssignCaseId(item.id)}
+                        className="rounded-md bg-red-700 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-white transition hover:bg-red-800"
                       >
                         Assign Now
                       </button>
                     ) : (
-                      <button className="rounded-md bg-slate-100 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">
+                      <button className="rounded-md bg-slate-100 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700 transition hover:bg-slate-200">
                         Manage
                       </button>
                     )}
@@ -141,25 +232,25 @@ export default function AdminOperationsPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => assignMedicToCase({ caseId: selectedCase.id, medicName: medic.name, eta: `${medic.etaMinutes}m` })}
-                    disabled={medic.availability === "busy"}
-                    className={`rounded-md px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] ${
+                    onClick={() => handleAssign(medic.name)}
+                    disabled={medic.availability === "busy" || assigning}
+                    className={`rounded-md px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] transition ${
                       medic.availability === "busy"
                         ? "cursor-not-allowed bg-slate-300 text-slate-500"
-                        : "bg-primary text-white"
+                        : "bg-primary text-white hover:bg-primary/90"
                     }`}
                   >
-                    {medic.availability === "busy" ? "Re-Route" : "Assign"}
+                    {assigning ? "Assigning..." : medic.availability === "busy" ? "Re-Route" : "Assign"}
                   </button>
                 </article>
               ))}
             </div>
 
             <div className="flex justify-end gap-2 bg-slate-50 px-6 py-4">
-              <button type="button" onClick={closeForceAssign} className="rounded-md px-4 py-2 text-sm font-medium text-slate-600">
+              <button type="button" onClick={() => setForceAssignCaseId(null)} className="rounded-md px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100">
                 Cancel
               </button>
-              <button type="button" className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+              <button type="button" className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
                 Override Protocol
               </button>
             </div>

@@ -12,37 +12,33 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { supabase, BookingRow, Paramedic } from "@/lib/supabase";
-import {
-  AddAdminModal,
-  CompleteVisitModal,
-  DispatchModal,
-  FieldForce,
-  LivePulseMonitor,
-} from "@/app/ops/dashboard/components";
+import { supabaseBrowser } from "@/lib/supabase";
 import { usePortalAuthStore } from "@/store/portalAuthStore";
 import { usePortalTheme } from "@/hooks/usePortalTheme";
+import { useAllCases } from "@/hooks/useSupabaseIntegration";
 
 type ControlTab = "pulse" | "field";
 
-const MASTER_ADMIN_USER_ID = "master@sanocare.in";
+interface ConsultationData {
+  id: string;
+  status: string;
+  profiles?: { full_name: string };
+  chief_complaint: string;
+  created_at: string;
+}
 
 export default function AdminControlPage() {
   const session = usePortalAuthStore((state) => state.session);
   const { isDark, toggleTheme } = usePortalTheme();
 
   const [activeTab, setActiveTab] = useState<ControlTab>("pulse");
-  const [bookings, setBookings] = useState<BookingRow[]>([]);
-  const [paramedics, setParamedics] = useState<Paramedic[]>([]);
-  const [selectedBooking, setSelectedBooking] = useState<BookingRow | null>(null);
-  const [isDispatchModalOpen, setIsDispatchModalOpen] = useState(false);
-  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
-  const [isAddAdminModalOpen, setIsAddAdminModalOpen] = useState(false);
+  const [consultations, setConsultations] = useState<ConsultationData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [newBookingCount, setNewBookingCount] = useState(0);
+  const [newCount, setNewCount] = useState(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const isMasterAdmin = session.userId.toLowerCase() === MASTER_ADMIN_USER_ID.toLowerCase();
+  const { getAllCases } = useAllCases();
 
   useEffect(() => {
     audioRef.current = new Audio("/notification.mp3");
@@ -53,71 +49,56 @@ export default function AdminControlPage() {
     if (soundEnabled && audioRef.current) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {
-        // Autoplay may be blocked by browser policy.
+        // Autoplay may be blocked by browser policy
       });
     }
   }, [soundEnabled]);
 
-  const fetchData = useCallback(async () => {
-    const [bookingsResult, paramedicsResult] = await Promise.all([
-      supabase.from("bookings").select("*").order("created_at", { ascending: false }),
-      supabase.from("paramedics").select("*").order("name"),
-    ]);
-
-    if (bookingsResult.data) {
-      setBookings(bookingsResult.data as BookingRow[]);
+  const fetchConsultations = useCallback(async () => {
+    try {
+      const result = await getAllCases({ limit: 50 });
+      if (result && result.data) {
+        setConsultations(result.data);
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error("Failed to fetch consultations:", err);
+      setLoading(false);
     }
-
-    if (paramedicsResult.data) {
-      setParamedics(paramedicsResult.data as Paramedic[]);
-    }
-  }, []);
+  }, [getAllCases]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchConsultations();
+  }, [fetchConsultations]);
 
+  // Real-time subscription
   useEffect(() => {
-    const channel = supabase
-      .channel("portal-admin-bookings-realtime")
+    const channel = supabaseBrowser
+      .channel("admin-control-realtime")
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "bookings",
-        },
+        { event: "INSERT", schema: "public", table: "consultations" },
         (payload) => {
-          const newBooking = payload.new as BookingRow;
-          setBookings((prev) => [newBooking, ...prev]);
-          setNewBookingCount((prev) => prev + 1);
+          setConsultations((prev) => [payload.new as ConsultationData, ...prev]);
+          setNewCount((prev) => prev + 1);
           playNotificationSound();
-        },
+        }
       )
       .on(
         "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "bookings",
-        },
+        { event: "UPDATE", schema: "public", table: "consultations" },
         (payload) => {
-          const updatedBooking = payload.new as BookingRow;
-          setBookings((prev) => prev.map((item) => (item.id === updatedBooking.id ? updatedBooking : item)));
-        },
+          setConsultations((prev) =>
+            prev.map((item) => (item.id === payload.new.id ? (payload.new as ConsultationData) : item))
+          );
+        }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabaseBrowser.removeChannel(channel);
     };
   }, [playNotificationSound]);
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        fetchData();
-        setNewBookingCount(0);
       }
     };
 

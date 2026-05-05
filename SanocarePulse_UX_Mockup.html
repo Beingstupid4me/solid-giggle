@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sanocare Pulse — UX Mockup</title>
+<style>
+  /* ─── Reset & Base ─────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    /* Sanocare Blue & White Palette */
+    --primary:       #1565C0;
+    --primary-dark:  #0D47A1;
+    --primary-mid:   #1976D2;
+    --primary-light: #42A5F5;
+    --primary-pale:  #E3F2FD;
+    --primary-xpale: #F0F7FF;
+
+    --accent:        #00ACC1;
+    --accent-light:  #E0F7FA;
+
+    --success:       #2E7D32;
+    --success-light: #E8F5E9;
+    --warning:       #F57C00;
+    --warning-light: #FFF3E0;
+    --error:         #C62828;
+    --error-light:   #FFEBEE;
+
+    --white:         #FFFFFF;
+    --bg:            #F4F8FF;
+    --surface:       #FFFFFF;
+    --surface-2:     #F0F4FC;
+
+    --text-primary:  #0D1B3E;
+    --text-secondary:#4A5580;
+    --text-muted:    #8A96B0;
+    --border:        #D8E4F0;
+
+    /* Typography */
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+    /* Radius */
+    --r-sm: 10px;
+    --r-md: 16px;
+    --r-lg: 22px;
+    --r-xl: 32px;
+    --r-full: 999px;
+
+    /* Shadow */
+    --shadow-sm: 0 2px 8px rgba(21,101,192,.10);
+    --shadow-md: 0 4px 20px rgba(21,101,192,.14);
+    --shadow-lg: 0 8px 40px rgba(21,101,192,.18);
+  }
+
+  body {
+    font-family: var(--font);
+    background: linear-gradient(135deg, #0D47A1 0%, #1565C0 40%, #1976D2 70%, #42A5F5 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 48px;
+    gap: 24px;
+  }
+
+  /* ─── Header ────────────────────────────────────────────────────────── */
+  .page-header {
+    text-align: center;
+    color: white;
+  }
+  .page-header .logo-row {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    margin-bottom: 6px;
+  }
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: white;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: var(--shadow-md);
+  }
+  .page-header h1 { font-size: 26px; font-weight: 800; letter-spacing: -.5px; }
+  .page-header p  { font-size: 14px; opacity: .8; margin-top: 4px; }
+
+  /* ─── Screen Selector ───────────────────────────────────────────────── */
+  .screen-tabs {
+    display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+  }
+  .tab-btn {
+    padding: 8px 18px;
+    background: rgba(255,255,255,.18);
+    border: 1.5px solid rgba(255,255,255,.35);
+    border-radius: var(--r-full);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .tab-btn:hover   { background: rgba(255,255,255,.3); }
+  .tab-btn.active  { background: white; color: var(--primary); border-color: white; }
+
+  /* ─── Phone Frame ───────────────────────────────────────────────────── */
+  .phone-frame {
+    width: 390px;
+    min-height: 844px;
+    background: var(--bg);
+    border-radius: 50px;
+    box-shadow:
+      0 0 0 10px #1a1a2e,
+      0 0 0 13px #2a2a4e,
+      var(--shadow-lg);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Notch */
+  .phone-frame::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 126px; height: 34px;
+    background: #1a1a2e;
+    border-radius: 0 0 20px 20px;
+    z-index: 100;
+  }
+
+  /* ─── Screen ────────────────────────────────────────────────────────── */
+  .screen {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-top: 34px; /* notch */
+    padding-bottom: 80px; /* bottom nav */
+    scrollbar-width: none;
+  }
+  .screen::-webkit-scrollbar { display: none; }
+  .screen.active { display: flex; }
+
+  /* ─── Status Bar ────────────────────────────────────────────────────── */
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 24px 0;
+    font-size: 12px; font-weight: 600;
+    color: white;
+    position: relative; z-index: 10;
+  }
+  .status-bar.dark { color: var(--text-primary); }
+  .status-icons { display: flex; gap: 5px; align-items: center; }
+
+  /* ─── Bottom Nav ────────────────────────────────────────────────────── */
+  .bottom-nav {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: white;
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding: 8px 0 16px;
+    z-index: 50;
+    box-shadow: 0 -4px 20px rgba(21,101,192,.08);
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 3px;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .nav-item .nav-icon { font-size: 20px; transition: transform .2s; }
+  .nav-item .nav-label { font-size: 10px; font-weight: 600; color: var(--text-muted); }
+  .nav-item.active .nav-label { color: var(--primary); }
+  .nav-item.active .nav-icon { transform: scale(1.15); }
+  .nav-dot {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--primary); margin: -2px auto 0;
+    opacity: 0;
+  }
+  .nav-item.active .nav-dot { opacity: 1; }
+
+  /* ─── Shared Components ─────────────────────────────────────────────── */
+  .hero-header {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, var(--primary-mid) 100%);
+    padding: 16px 20px 28px;
+    position: relative; overflow: hidden;
+  }
+  .hero-header::after {
+    content: '';
+    position: absolute; bottom: -20px; left: -20px; right: -20px;
+    height: 40px;
+    background: var(--bg);
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  }
+  .hero-bubble {
+    position: absolute; border-radius: 50%;
+    background: rgba(255,255,255,.06);
+    pointer-events: none;
+  }
+
+  .card {
+    background: var(--surface);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .card-pad { padding: 16px; }
+
+  .section-title {
+    font-size: 16px; font-weight: 700; color: var(--text-primary);
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 20px; margin: 20px 0 10px;
+  }
+  .see-all { font-size: 12px; font-weight: 600; color: var(--primary); cursor: pointer; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 5px 12px;
+    border-radius: var(--r-full);
+    font-size: 12px; font-weight: 600;
+    white-space: nowrap; cursor: pointer;
+    transition: all .15s;
+  }
+  .chip-outline {
+    border: 1.5px solid var(--border);
+    background: white; color: var(--text-secondary);
+  }
+  .chip-outline:hover,
+  .chip-outline.active {
+    border-color: var(--primary);
+    background: var(--primary-pale);
+    color: var(--primary);
+  }
+
+  .btn-primary {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-mid) 100%);
+    color: white; border: none;
+    border-radius: var(--r-md);
+    padding: 14px 24px;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer; width: 100%;
+    box-shadow: 0 4px 16px rgba(21,101,192,.35);
+    transition: all .2s;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(21,101,192,.4); }
+  .btn-outline {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: white; color: var(--primary);
+    border: 2px solid var(--primary);
+    border-radius: var(--r-md);
+    padding: 12px 24px;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer; width: 100%;
+    transition: all .2s;
+  }
+  .star { color: #FFC107; }
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 10px; border-radius: var(--r-full);
+    font-size: 11px; font-weight: 700;
+  }
+  .badge-success { background: var(--success-light); color: var(--success); }
+  .badge-primary { background: var(--primary-pale); color: var(--primary); }
+  .badge-warning { background: var(--warning-light); color: var(--warning); }
+  .badge-accent  { background: var(--accent-light);  color: var(--accent);  }
+
+  .avatar {
+    border-radius: 50%; object-fit: cover;
+    background: var(--primary-pale);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700;
+    color: var(--primary); flex-shrink: 0;
+  }
+
+  .divider { height: 1px; background: var(--border); margin: 0 20px; }
+
+  /* ─── SCREEN 1: HOME ─────────────────────────────────────────────────── */
+  .home-header { position: relative; }
+  .home-header .status-bar { color: white; }
+  .home-top {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 20px 0;
+  }
+  .home-greeting small { font-size: 12px; color: rgba(255,255,255,.75); }
+  .home-greeting h2 { font-size: 20px; font-weight: 800; color: white; margin-top: 2px; }
+  .notif-btn {
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,.18);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; cursor: pointer; position: relative;
+    border: none;
+  }
+  .notif-dot {
+    position: absolute; top: 7px; right: 8px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #FF5252; border: 2px solid var(--primary);
+  }
+
+  .search-bar {
+    margin: 16px 20px 24px;
+    background: white; border-radius: var(--r-md);
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px;
+    box-shadow: var(--shadow-md);
+  }
+  .search-bar input {
+    border: none; outline: none; flex: 1;
+    font-size: 14px; color: var(--text-primary);
+    background: transparent;
+    font-family: var(--font);
+  }
+  .search-bar input::placeholder { color: var(--text-muted); }
+  .search-icon { font-size: 18px; color: var(--text-muted); }
+  .mic-icon  { font-size: 18px; color: var(--primary); }
+
+  /* Appointment Banner */
+  .appt-banner {
+    margin: 0 20px 20px;
+    background: linear-gradient(135deg, #0D47A1, #1565C0);
+    border-radius: var(--r-lg);
+    padding: 16px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: var(--shadow-md);
+    position: relative; overflow: hidden;
+  }
+  .appt-banner::before {
+    content: '';
+    position: absolute; right: -20px; top: -20px;
+    width: 100px; height: 100px;
+    background: rgba(255,255,255,.07);
+    border-radius: 50%;
+  }
+  .appt-banner .appt-icon {
+    width: 50px; height: 50px;
+    background: rgba(255,255,255,.18);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; flex-shrink: 0;
+  }
+  .appt-info { flex: 1; }
+  .appt-info small { font-size: 11px; color: rgba(255,255,255,.7); font-weight: 600; letter-spacing: .5px; text-transform: uppercase; }
+  .appt-info h4 { color: white; font-size: 14px; font-weight: 700; margin: 2px 0; }
+  .appt-info p  { color: rgba(255,255,255,.8); font-size: 12px; }
+  .appt-join {
+    background: white; color: var(--primary);
+    border: none; border-radius: 10px;
+    padding: 8px 12px; font-size: 12px; font-weight: 700;
+    cursor: pointer; white-space: nowrap;
+  }
+
+  /* Quick Actions */
+  .quick-actions {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px; padding: 0 20px 4px;
+  }
+  .qa-item {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    cursor: pointer;
+  }
+  .qa-icon {
+    width: 52px; height: 52px;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    transition: transform .2s;
+  }
+  .qa-item:hover .qa-icon { transform: scale(1.08); }
+  .qa-label { font-size: 10px; font-weight: 600; color: var(--text-secondary); text-align: center; }
+  .qa-blue    { background: var(--primary-pale); }
+  .qa-teal    { background: var(--accent-light); }
+  .qa-green   { background: var(--success-light); }
+  .qa-orange  { background: var(--warning-light); }
+
+  /* Specialization chips */
+  .spec-scroll {
+    display: flex; gap: 10px; overflow-x: auto; padding: 0 20px 4px;
+    scrollbar-width: none;
+  }
+  .spec-scroll::-webkit-scrollbar { display: none; }
+  .spec-chip {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    flex-shrink: 0; cursor: pointer;
+  }
+  .spec-emoji {
+    width: 52px; height: 52px;
+    background: var(--primary-pale);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    border: 2px solid transparent;
+    transition: all .2s;
+  }
+  .spec-chip:hover .spec-emoji,
+  .spec-chip.active .spec-emoji {
+    border-color: var(--primary);
+    background: var(--primary-pale);
+  }
+  .spec-chip span { font-size: 10px; font-weight: 600; color: var(--text-secondary); }
+
+  /* Doctor Card (horizontal scroll) */
+  .doc-scroll {
+    display: flex; gap: 14px; overflow-x: auto; padding: 0 20px 4px;
+    scrollbar-width: none;
+  }
+  .doc-scroll::-webkit-scrollbar { display: none; }
+  .doc-card-mini {
+    background: white; border-radius: var(--r-lg);
+    padding: 16px; width: 160px; flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
+    cursor: pointer; transition: transform .2s;
+  }
+  .doc-card-mini:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .doc-avatar-mini {
+    width: 60px; height: 60px; border-radius: 50%;
+    background: var(--primary-pale);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; margin-bottom: 10px;
+  }
+  .doc-card-mini .doc-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+  .doc-card-mini .doc-spec { font-size: 11px; color: var(--primary); font-weight: 600; margin: 2px 0; }
+  .doc-card-mini .doc-fee  { font-size: 12px; font-weight: 700; color: var(--primary); margin-top: 8px; }
+  .doc-card-mini .doc-rate { font-size: 11px; color: var(--text-muted); }
+
+  /* Health tip */
+  .health-tip {
+    margin: 20px 20px 0;
+    background: linear-gradient(135deg, var(--accent-light), #E8F5FD);
+    border-radius: var(--r-lg);
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    border: 1px solid rgba(0,172,193,.2);
+  }
+  .tip-icon { font-size: 30px; }
+  .tip-text small { font-size: 10px; font-weight: 700; color: var(--accent); letter-spacing: .5px; text-transform: uppercase; }
+  .tip-text p { font-size: 12px; color: var(--text-secondary); margin-top: 2px; line-height: 1.5; }
+
+  /* ─── SCREEN 2: DOCTORS ──────────────────────────────────────────────── */
+  .doctors-header {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    padding: 16px 20px 20px;
+  }
+  .doctors-header h3 { font-size: 20px; font-weight: 800; color: white; margin-bottom: 12px; }
+  .search-bar-dark {
+    background: rgba(255,255,255,.15);
+    border: 1.5px solid rgba(255,255,255,.3);
+    border-radius: var(--r-md);
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    backdrop-filter: blur(4px);
+  }
+  .search-bar-dark input {
+    border: none; outline: none; flex: 1;
+    font-size: 14px; color: white; background: transparent;
+    font-family: var(--font);
+  }
+  .search-bar-dark input::placeholder { color: rgba(255,255,255,.6); }
+
+  .filter-row {
+    display: flex; gap: 8px; overflow-x: auto; padding: 12px 20px;
+    scrollbar-width: none;
+  }
+  .filter-row::-webkit-scrollbar { display: none; }
+
+  .sort-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 4px 20px 12px;
+  }
+  .sort-row .count { font-size: 13px; color: var(--text-secondary); }
+  .sort-row .sort-btn {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 600; color: var(--primary); cursor: pointer;
+    background: var(--primary-pale); padding: 5px 10px; border-radius: var(--r-full);
+    border: none;
+  }
+
+  .doc-list { display: flex; flex-direction: column; gap: 12px; padding: 0 20px 4px; }
+  .doc-card {
+    background: white; border-radius: var(--r-lg);
+    padding: 16px; display: flex; gap: 14px;
+    box-shadow: var(--shadow-sm); cursor: pointer;
+    transition: all .2s; align-items: flex-start;
+  }
+  .doc-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .doc-avatar {
+    width: 68px; height: 68px; border-radius: 20px;
+    background: var(--primary-pale);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; flex-shrink: 0;
+    border: 2px solid var(--border);
+  }
+  .doc-info { flex: 1; }
+  .doc-info .name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+  .doc-info .spec { font-size: 12px; color: var(--primary); font-weight: 600; margin: 2px 0 4px; }
+  .doc-info .hosp { font-size: 12px; color: var(--text-muted); }
+  .doc-meta { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .doc-right { text-align: right; }
+  .doc-right .fee { font-size: 16px; font-weight: 800; color: var(--primary); }
+  .doc-right .fee-label { font-size: 10px; color: var(--text-muted); }
+  .online-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--success); margin-right: 4px; }
+
+  /* ─── SCREEN 3: BOOK APPOINTMENT ─────────────────────────────────────── */
+  .book-header {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .back-btn {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,.2);
+    border: none; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: white; cursor: pointer; flex-shrink: 0;
+  }
+  .book-header h3 { font-size: 18px; font-weight: 800; color: white; }
+
+  .doc-summary {
+    margin: 16px 20px 0;
+    background: white; border-radius: var(--r-lg);
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .section-block { padding: 16px 20px 0; }
+  .section-block h4 { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
+
+  /* Consult type */
+  .consult-types { display: flex; gap: 10px; }
+  .ctype {
+    flex: 1; padding: 12px; border-radius: var(--r-md);
+    border: 2px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    cursor: pointer; transition: all .2s; background: white;
+  }
+  .ctype:hover, .ctype.active {
+    border-color: var(--primary);
+    background: var(--primary-pale);
+  }
+  .ctype .ct-icon { font-size: 24px; }
+  .ctype .ct-label { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+  .ctype .ct-price { font-size: 11px; color: var(--text-muted); }
+  .ctype.active .ct-label { color: var(--primary); }
+
+  /* Date picker */
+  .date-scroll {
+    display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .date-scroll::-webkit-scrollbar { display: none; }
+  .date-chip {
+    display: flex; flex-direction: column; align-items: center;
+    min-width: 52px; padding: 10px 8px;
+    border-radius: var(--r-md); border: 1.5px solid var(--border);
+    background: white; cursor: pointer; transition: all .2s; flex-shrink: 0;
+  }
+  .date-chip:hover, .date-chip.active {
+    border-color: var(--primary); background: var(--primary);
+  }
+  .date-chip .day { font-size: 10px; font-weight: 600; color: var(--text-muted); }
+  .date-chip .num { font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 2px 0; }
+  .date-chip .mon { font-size: 10px; color: var(--text-muted); }
+  .date-chip.active .day,
+  .date-chip.active .num,
+  .date-chip.active .mon { color: white; }
+  .date-chip.active .day,
+  .date-chip.active .mon { opacity: .85; }
+
+  /* Time slots */
+  .slot-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  }
+  .slot {
+    padding: 10px; border-radius: var(--r-sm);
+    border: 1.5px solid var(--border);
+    background: white; text-align: center;
+    font-size: 12px; font-weight: 600; color: var(--text-secondary);
+    cursor: pointer; transition: all .2s;
+  }
+  .slot:hover, .slot.active {
+    border-color: var(--primary); background: var(--primary-pale); color: var(--primary);
+  }
+  .slot.booked {
+    background: var(--surface-2); color: var(--text-muted);
+    cursor: not-allowed; text-decoration: line-through; opacity: .5;
+  }
+
+  /* Symptoms */
+  .symptoms-input {
+    width: 100%; border: 1.5px solid var(--border);
+    border-radius: var(--r-md); padding: 12px;
+    font-size: 14px; color: var(--text-primary);
+    font-family: var(--font); resize: none;
+    background: white; outline: none; min-height: 80px;
+  }
+  .symptoms-input:focus { border-color: var(--primary); }
+  .symptoms-input::placeholder { color: var(--text-muted); }
+
+  /* Booking footer */
+  .booking-footer {
+    padding: 16px 20px;
+    background: white;
+    border-top: 1px solid var(--border);
+  }
+  .fee-summary {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .fee-summary .label { font-size: 13px; color: var(--text-secondary); }
+  .fee-summary .amount { font-size: 20px; font-weight: 800; color: var(--primary); }
+
+  /* Confirmation overlay */
+  .confirm-overlay {
+    display: none;
+    position: absolute; inset: 0;
+    background: rgba(13,27,62,.5);
+    z-index: 200; align-items: flex-end;
+    backdrop-filter: blur(4px);
+  }
+  .confirm-overlay.show { display: flex; }
+  .confirm-sheet {
+    width: 100%; background: white;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    padding: 28px 24px 36px;
+    animation: slideUp .3s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  .confirm-icon {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: var(--success-light);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; margin: 0 auto 16px;
+  }
+  .confirm-sheet h3 { text-align: center; font-size: 22px; font-weight: 800; color: var(--text-primary); }
+  .confirm-sheet p  { text-align: center; color: var(--text-secondary); font-size: 14px; margin: 8px 0 20px; line-height: 1.5; }
+  .confirm-detail { background: var(--bg); border-radius: var(--r-md); padding: 14px 16px; margin-bottom: 20px; }
+  .confirm-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+  .confirm-row:not(:last-child) { border-bottom: 1px solid var(--border); }
+  .confirm-row .key { font-size: 12px; color: var(--text-muted); }
+  .confirm-row .val { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+
+  /* ─── SCREEN 4: PROFILE ──────────────────────────────────────────────── */
+  .profile-header {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    padding: 20px 20px 50px;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .profile-header .bubble1 {
+    position: absolute; width: 120px; height: 120px; border-radius: 50%;
+    background: rgba(255,255,255,.07); top: -30px; left: -30px;
+  }
+  .profile-header .bubble2 {
+    position: absolute; width: 80px; height: 80px; border-radius: 50%;
+    background: rgba(255,255,255,.05); bottom: 10px; right: -20px;
+  }
+  .profile-avatar-wrap { position: relative; display: inline-block; margin-bottom: 12px; }
+  .profile-avatar {
+    width: 90px; height: 90px; border-radius: 50%;
+    background: rgba(255,255,255,.25);
+    border: 3px solid rgba(255,255,255,.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 42px; margin: 0 auto;
+  }
+  .edit-badge {
+    position: absolute; bottom: 2px; right: 2px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: white; border: 2px solid var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+  }
+  .profile-header h3 { font-size: 20px; font-weight: 800; color: white; }
+  .profile-header p  { font-size: 13px; color: rgba(255,255,255,.75); margin-top: 2px; }
+  .profile-header .verified {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,.2);
+    border-radius: var(--r-full);
+    padding: 4px 12px; margin-top: 8px;
+    font-size: 12px; font-weight: 600; color: white;
+  }
+
+  .health-stats-card {
+    margin: -28px 20px 0;
+    background: white; border-radius: var(--r-lg);
+    padding: 16px; box-shadow: var(--shadow-md);
+    display: flex; position: relative; z-index: 10;
+  }
+  .hstat { flex: 1; text-align: center; }
+  .hstat:not(:last-child) { border-right: 1px solid var(--border); }
+  .hstat .val { font-size: 22px; font-weight: 800; color: var(--primary); }
+  .hstat .lbl { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+
+  .profile-section { padding: 20px 20px 0; }
+  .profile-section h4 {
+    font-size: 12px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .8px; margin-bottom: 10px;
+  }
+  .menu-card { background: white; border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+  .menu-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px; cursor: pointer; transition: background .15s;
+  }
+  .menu-item:hover { background: var(--bg); }
+  .menu-item:not(:last-child) { border-bottom: 1px solid var(--border); }
+  .menu-ico {
+    width: 38px; height: 38px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+    flex-shrink: 0;
+  }
+  .menu-text { flex: 1; }
+  .menu-text .t { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .menu-text .s { font-size: 12px; color: var(--text-muted); }
+  .menu-arrow { font-size: 16px; color: var(--text-muted); }
+
+  .logout-btn {
+    margin: 16px 20px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--error-light);
+    border: 1.5px solid rgba(198,40,40,.2);
+    border-radius: var(--r-lg);
+    padding: 14px; cursor: pointer;
+    font-size: 15px; font-weight: 700; color: var(--error);
+  }
+
+  /* ─── Animations ─────────────────────────────────────────────────────── */
+  .screen.active > * { animation: fadeSlideIn .3s ease forwards; }
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── Labels ─────────────────────────────────────────────────────────── */
+  .screen-label {
+    color: white; text-align: center;
+    font-size: 13px; opacity: .75; margin-top: -8px;
+    letter-spacing: .3px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="page-header">
+  <div class="logo-row">
+    <div class="logo-icon">🏥</div>
+    <h1>Sanocare Pulse</h1>
+  </div>
+  <p>Patient App UX Mockup — Interactive Prototype</p>
+</div>
+
+<!-- Screen Tabs -->
+<div class="screen-tabs">
+  <button class="tab-btn active" onclick="switchScreen('home',this)">🏠 Home</button>
+  <button class="tab-btn" onclick="switchScreen('doctors',this)">🔍 Doctors</button>
+  <button class="tab-btn" onclick="switchScreen('booking',this)">📅 Book Appointment</button>
+  <button class="tab-btn" onclick="switchScreen('profile',this)">👤 Profile</button>
+</div>
+
+<!-- Phone Frame -->
+<div class="phone-frame" id="phoneFrame">
+
+  <!-- Bottom Nav (always visible) -->
+  <nav class="bottom-nav">
+    <div class="nav-item active" id="nav-home" onclick="switchScreen('home'); setActiveNav('nav-home')">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Home</span>
+      <div class="nav-dot"></div>
+    </div>
+    <div class="nav-item" id="nav-doctors" onclick="switchScreen('doctors'); setActiveNav('nav-doctors')">
+      <span class="nav-icon">🔍</span>
+      <span class="nav-label">Doctors</span>
+      <div class="nav-dot"></div>
+    </div>
+    <div class="nav-item" id="nav-booking" onclick="switchScreen('booking'); setActiveNav('nav-booking')">
+      <span class="nav-icon">📅</span>
+      <span class="nav-label">Bookings</span>
+      <div class="nav-dot"></div>
+    </div>
+    <div class="nav-item" id="nav-records">
+      <span class="nav-icon">📂</span>
+      <span class="nav-label">Records</span>
+      <div class="nav-dot"></div>
+    </div>
+    <div class="nav-item" id="nav-profile" onclick="switchScreen('profile'); setActiveNav('nav-profile')">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">Profile</span>
+      <div class="nav-dot"></div>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- SCREEN 1: HOME                                                    -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="screen active" id="screen-home">
+
+    <!-- Hero Header -->
+    <div class="hero-header home-header">
+      <div class="hero-bubble" style="width:120px;height:120px;top:-40px;right:-30px;"></div>
+      <div class="hero-bubble" style="width:60px;height:60px;bottom:30px;left:20px;"></div>
+
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="status-icons">
+          <span>📶</span><span>🔋</span>
+        </div>
+      </div>
+
+      <div class="home-top">
+        <div class="home-greeting">
+          <small>Good Morning 🌤</small>
+          <h2>Shashwat Arora</h2>
+        </div>
+        <button class="notif-btn" onclick="switchScreen('profile'); setActiveNav('nav-profile')">
+          🔔
+          <div class="notif-dot"></div>
+        </button>
+      </div>
+
+      <!-- Search -->
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search doctors, specialities…" onclick="switchScreen('doctors'); setActiveNav('nav-doctors')">
+        <span class="mic-icon">🎙</span>
+      </div>
+    </div>
+
+    <!-- Upcoming Appointment Banner -->
+    <div class="appt-banner">
+      <div class="appt-icon">👨‍⚕️</div>
+      <div class="appt-info">
+        <small>Upcoming Appointment</small>
+        <h4>Dr. Priya Sharma</h4>
+        <p>🗓 Today, 11:30 AM · Video Call</p>
+      </div>
+      <button class="appt-join">Join</button>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section-title">Quick Actions</div>
+    <div class="quick-actions">
+      <div class="qa-item" onclick="switchScreen('doctors'); setActiveNav('nav-doctors')">
+        <div class="qa-icon qa-blue">🩺</div>
+        <span class="qa-label">Find Doctor</span>
+      </div>
+      <div class="qa-item" onclick="switchScreen('doctors'); setActiveNav('nav-doctors')">
+        <div class="qa-icon qa-teal">📹</div>
+        <span class="qa-label">Consult Online</span>
+      </div>
+      <div class="qa-item" onclick="switchScreen('booking'); setActiveNav('nav-booking')">
+        <div class="qa-icon qa-green">📋</div>
+        <span class="qa-label">My Bookings</span>
+      </div>
+      <div class="qa-item">
+        <div class="qa-icon qa-orange">📂</div>
+        <span class="qa-label">Records</span>
+      </div>
+    </div>
+
+    <!-- Specializations -->
+    <div class="section-title">
+      Browse by Specialty
+      <span class="see-all" onclick="switchScreen('doctors'); setActiveNav('nav-doctors')">See All</span>
+    </div>
+    <div class="spec-scroll">
+      <div class="spec-chip active"><div class="spec-emoji">❤️</div><span>Cardiology</span></div>
+      <div class="spec-chip"><div class="spec-emoji">🧠</div><span>Neurology</span></div>
+      <div class="spec-chip"><div class="spec-emoji">🦷</div><span>Dental</span></div>
+      <div class="spec-chip"><div class="spec-emoji">👁️</div><span>Eye Care</span></div>
+      <div class="spec-chip"><div class="spec-emoji">🦴</div><span>Ortho</span></div>
+      <div class="spec-chip"><div class="spec-emoji">🧒</div><span>Pediatric</span></div>
+    </div>
+
+    <!-- Top Doctors -->
+    <div class="section-title">
+      Top Rated Doctors
+      <span class="see-all" onclick="switchScreen('doctors'); setActiveNav('nav-doctors')">See All</span>
+    </div>
+    <div class="doc-scroll">
+      <div class="doc-card-mini" onclick="switchScreen('booking'); setActiveNav('nav-booking')">
+        <div class="doc-avatar-mini">👩‍⚕️</div>
+        <div class="doc-name">Dr. Priya Sharma</div>
+        <div class="doc-spec">Cardiologist</div>
+        <div class="doc-rate"><span class="star">★</span> 4.9 (312 reviews)</div>
+        <div class="doc-fee">₹800 <span style="font-size:10px;color:var(--text-muted)">/ visit</span></div>
+      </div>
+      <div class="doc-card-mini" onclick="switchScreen('booking'); setActiveNav('nav-booking')">
+        <div class="doc-avatar-mini">👨‍⚕️</div>
+        <div class="doc-name">Dr. Arjun Mehta</div>
+        <div class="doc-spec">Neurologist</div>
+        <div class="doc-rate"><span class="star">★</span> 4.8 (187 reviews)</div>
+        <div class="doc-fee">₹1,200 <span style="font-size:10px;color:var(--text-muted)">/ visit</span></div>
+      </div>
+      <div class="doc-card-mini" onclick="switchScreen('booking'); setActiveNav('nav-booking')">
+        <div class="doc-avatar-mini">👩‍⚕️</div>
+        <div class="doc-name">Dr. Sonal Patel</div>
+        <div class="doc-spec">Pediatrician</div>
+        <div class="doc-rate"><span class="star">★</span> 4.9 (445 reviews)</div>
+        <div class="doc-fee">₹600 <span style="font-size:10px;color:var(--text-muted)">/ visit</span></div>
+      </div>
+    </div>
+
+    <!-- Health Tip -->
+    <div class="health-tip">
+      <div class="tip-icon">💡</div>
+      <div class="tip-text">
+        <small>Health Tip of the Day</small>
+        <p>Drink at least 8 glasses of water daily to maintain healthy organ function and energy levels.</p>
+      </div>
+    </div>
+
+    <div style="height:20px;"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- SCREEN 2: DOCTORS                                                 -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-doctors">
+    <div class="doctors-header">
+      <div class="status-bar" style="color:white;padding-bottom:10px;">
+        <span>9:41</span>
+        <div class="status-icons"><span>📶</span><span>🔋</span></div>
+      </div>
+      <h3>Find a Doctor</h3>
+      <div class="search-bar-dark">
+        <span style="font-size:18px;">🔍</span>
+        <input type="text" placeholder="Search by name or speciality…">
+      </div>
+    </div>
+
+    <!-- Filter Chips -->
+    <div class="filter-row">
+      <span class="chip chip-outline active">All</span>
+      <span class="chip chip-outline">Cardiologist</span>
+      <span class="chip chip-outline">Neurologist</span>
+      <span class="chip chip-outline">Dermatologist</span>
+      <span class="chip chip-outline">Pediatrician</span>
+      <span class="chip chip-outline">Gynecologist</span>
+      <span class="chip chip-outline">ENT</span>
+    </div>
+
+    <!-- Sort Row -->
+    <div class="sort-row">
+      <span class="count">42 doctors found</span>
+      <div style="display:flex;gap:8px;">
+        <button class="sort-btn">🎯 Online</button>
+        <button class="sort-btn">⭐ Top Rated</button>
+      </div>
+    </div>
+
+    <!-- Doctor List -->
+    <div class="doc-list">
+
+      <div class="doc-card" onclick="switchScreen('booking'); setActiveNav('nav-booking')">
+        <div class="doc-avatar">👩‍⚕️</div>
+        <div class="doc-info">
+          <div class="name">Dr. Priya Sharma</div>
+          <div class="spec">Cardiologist</div>
+          <div class="hosp">🏥 Apollo Hospital, Mumbai</div>
+          <div class="doc-meta">
+            <span class="badge badge-success"><span class="online-dot"></span>Online</span>
+            <span class="badge badge-primary">⭐ 4.9</span>
+            <span class="badge badge-accent">14 yr exp</span>
+          </div>
+        </div>
+        <div class="doc-right">
+          <div class="fee">₹800</div>
+          <div class="fee-label">per visit</div>
+        </div>
+      </div>
+
+      <div class="doc-card" onclick="switchScreen('booking'); setActiveNav('nav-booking')">
+        <div class="doc-avatar">👨‍⚕️</div>
+        <div class="doc-info">
+          <div class="name">Dr. Arjun Mehta</div>
+          <div class="spec">Neurologist</div>
+          <div class="hosp">🏥 Fortis Hospital, Delhi</div>
+          <div class="doc-meta">
+            <span class="badge badge-success"><span class="online-dot"></span>Online</span>
+            <span class="badge badge-primary">⭐ 4.8</span>
+            <span class="badge badge-accent">10 yr exp</span>
+          </div>
+        </div>
+        <div class="doc-right">
+          <div class="fee">₹1,200</div>
+          <div class="fee-label">per visit</div>
+        </div>
+      </div>
+
+      <div class="doc-card" onclick="switchScreen('booking'); setActiveNav('nav-booking')">
+        <div class="doc-avatar">👩‍⚕️</div>
+        <div class="doc-info">
+          <div class="name">Dr. Sonal Patel</div>
+          <div class="spec">Pediatrician</div>
+          <div class="hosp">🏥 Cloudnine Clinic, Pune</div>
+          <div class="doc-meta">
+            <span class="badge badge-warning">In-Person</span>
+            <span class="badge badge-primary">⭐ 4.9</span>
+            <span class="badge badge-accent">8 yr exp</span>
+          </div>
+        </div>
+        <div class="doc-right">
+          <div class="fee">₹600</div>
+          <div class="fee-label">per visit</div>
+        </div>
+      </div>
+
+      <div class="doc-card" onclick="switchScreen('booking'); setActiveNav('nav-booking')">
+        <div class="doc-avatar">👨‍⚕️</div>
+        <div class="doc-info">
+          <div class="name">Dr. Ravi Kumar</div>
+          <div class="spec">Dermatologist</div>
+          <div class="hosp">🏥 Max Healthcare, Bengaluru</div>
+          <div class="doc-meta">
+            <span class="badge badge-success"><span class="online-dot"></span>Online</span>
+            <span class="badge badge-primary">⭐ 4.7</span>
+            <span class="badge badge-accent">11 yr exp</span>
+          </div>
+        </div>
+        <div class="doc-right">
+          <div class="fee">₹900</div>
+          <div class="fee-label">per visit</div>
+        </div>
+      </div>
+
+    </div>
+    <div style="height:20px;"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- SCREEN 3: BOOK APPOINTMENT                                        -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-booking">
+
+    <!-- Confirmation Sheet Overlay -->
+    <div class="confirm-overlay" id="confirmOverlay">
+      <div class="confirm-sheet">
+        <div class="confirm-icon">✅</div>
+        <h3>Booking Confirmed!</h3>
+        <p>Your appointment has been scheduled. You'll receive a reminder 30 minutes before.</p>
+        <div class="confirm-detail">
+          <div class="confirm-row"><span class="key">Doctor</span><span class="val">Dr. Priya Sharma</span></div>
+          <div class="confirm-row"><span class="key">Date</span><span class="val">Mon, Mar 30, 2026</span></div>
+          <div class="confirm-row"><span class="key">Time</span><span class="val">10:00 AM</span></div>
+          <div class="confirm-row"><span class="key">Type</span><span class="val">📹 Video Consultation</span></div>
+          <div class="confirm-row"><span class="key">Booking ID</span><span class="val" style="color:var(--primary);">#SNC8A9F2</span></div>
+        </div>
+        <button class="btn-primary" onclick="closeConfirm()">✅ Done</button>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div class="book-header">
+      <div class="status-bar" style="color:white;padding:0;position:relative;top:0;left:0;right:0;margin-bottom:12px;">
+        <span>9:41</span>
+        <div class="status-icons"><span>📶</span><span>🔋</span></div>
+      </div>
+      <button class="back-btn" onclick="switchScreen('doctors'); setActiveNav('nav-doctors')">←</button>
+      <h3>Book Appointment</h3>
+    </div>
+
+    <!-- Doctor Summary -->
+    <div class="doc-summary">
+      <div style="width:52px;height:52px;border-radius:16px;background:var(--primary-pale);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">👩‍⚕️</div>
+      <div style="flex:1;">
+        <div style="font-size:15px;font-weight:700;color:var(--text-primary);">Dr. Priya Sharma</div>
+        <div style="font-size:12px;color:var(--primary);font-weight:600;">Cardiologist · Apollo Hospital</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;"><span class="star">★</span> 4.9 · 14 yrs exp</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:18px;font-weight:800;color:var(--primary);">₹800</div>
+        <div style="font-size:10px;color:var(--text-muted);">per visit</div>
+      </div>
+    </div>
+
+    <!-- Consultation Type -->
+    <div class="section-block">
+      <h4>Consultation Type</h4>
+      <div class="consult-types">
+        <div class="ctype" onclick="selectCtype(this)">
+          <div class="ct-icon">🏥</div>
+          <div class="ct-label">In-Person</div>
+          <div class="ct-price">₹800</div>
+        </div>
+        <div class="ctype active" onclick="selectCtype(this)">
+          <div class="ct-icon">📹</div>
+          <div class="ct-label">Video Call</div>
+          <div class="ct-price">₹700</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Date Picker -->
+    <div class="section-block">
+      <h4>Select Date</h4>
+      <div class="date-scroll">
+        <div class="date-chip" onclick="selectDate(this)"><div class="day">SAT</div><div class="num">28</div><div class="mon">Mar</div></div>
+        <div class="date-chip" onclick="selectDate(this)"><div class="day">SUN</div><div class="num">29</div><div class="mon">Mar</div></div>
+        <div class="date-chip active" onclick="selectDate(this)"><div class="day">MON</div><div class="num">30</div><div class="mon">Mar</div></div>
+        <div class="date-chip" onclick="selectDate(this)"><div class="day">TUE</div><div class="num">31</div><div class="mon">Mar</div></div>
+        <div class="date-chip" onclick="selectDate(this)"><div class="day">WED</div><div class="num">01</div><div class="mon">Apr</div></div>
+        <div class="date-chip" onclick="selectDate(this)"><div class="day">THU</div><div class="num">02</div><div class="mon">Apr</div></div>
+        <div class="date-chip" onclick="selectDate(this)"><div class="day">FRI</div><div class="num">03</div><div class="mon">Apr</div></div>
+      </div>
+    </div>
+
+    <!-- Time Slots -->
+    <div class="section-block">
+      <h4>Available Slots</h4>
+      <div class="slot-grid">
+        <div class="slot booked">09:00 AM</div>
+        <div class="slot active" onclick="selectSlot(this)">10:00 AM</div>
+        <div class="slot" onclick="selectSlot(this)">10:30 AM</div>
+        <div class="slot" onclick="selectSlot(this)">11:00 AM</div>
+        <div class="slot booked">11:30 AM</div>
+        <div class="slot" onclick="selectSlot(this)">02:00 PM</div>
+        <div class="slot" onclick="selectSlot(this)">02:30 PM</div>
+        <div class="slot" onclick="selectSlot(this)">03:30 PM</div>
+        <div class="slot booked">04:00 PM</div>
+      </div>
+    </div>
+
+    <!-- Symptoms -->
+    <div class="section-block">
+      <h4>Describe Symptoms <span style="font-size:11px;font-weight:400;color:var(--text-muted);">(optional)</span></h4>
+      <textarea class="symptoms-input" placeholder="e.g., Chest pain, shortness of breath since 2 days…" rows="3"></textarea>
+    </div>
+
+    <!-- Booking Footer -->
+    <div class="booking-footer">
+      <div class="fee-summary">
+        <div>
+          <div class="label">Consultation Fee</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:1px;">Video · Dr. Priya · 30 Mar, 10:00 AM</div>
+        </div>
+        <div class="amount">₹700</div>
+      </div>
+      <button class="btn-primary" onclick="showConfirm()">
+        🗓 Confirm Booking
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- SCREEN 4: PROFILE                                                 -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-profile">
+
+    <div class="profile-header">
+      <div class="status-bar" style="color:white;">
+        <span>9:41</span>
+        <div class="status-icons"><span>📶</span><span>🔋</span></div>
+      </div>
+      <div class="bubble1"></div>
+      <div class="bubble2"></div>
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar">👤</div>
+        <div class="edit-badge">✏️</div>
+      </div>
+      <h3>Shashwat Arora</h3>
+      <p>+91 98765 43210 · shashwat@sanocare.in</p>
+      <div class="verified">✅ Verified Account</div>
+    </div>
+
+    <!-- Health Stats -->
+    <div class="health-stats-card">
+      <div class="hstat"><div class="val">8</div><div class="lbl">Consultations</div></div>
+      <div class="hstat"><div class="val">12</div><div class="lbl">Reports</div></div>
+      <div class="hstat"><div class="val">3</div><div class="lbl">Upcoming</div></div>
+    </div>
+
+    <!-- Health Section -->
+    <div class="profile-section" style="margin-top:20px;">
+      <h4>Health</h4>
+      <div class="menu-card">
+        <div class="menu-item">
+          <div class="menu-ico" style="background:var(--primary-pale);">📋</div>
+          <div class="menu-text"><div class="t">Health Records</div><div class="s">12 reports & documents</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-ico" style="background:var(--error-light);">❤️</div>
+          <div class="menu-text"><div class="t">Vital Signs</div><div class="s">Last updated 2 days ago</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-ico" style="background:var(--warning-light);">💊</div>
+          <div class="menu-text"><div class="t">Medications</div><div class="s">2 active prescriptions</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Account Section -->
+    <div class="profile-section">
+      <h4>Account</h4>
+      <div class="menu-card">
+        <div class="menu-item">
+          <div class="menu-ico" style="background:var(--primary-pale);">👤</div>
+          <div class="menu-text"><div class="t">Edit Profile</div><div class="s">Name, DOB, blood group</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-ico" style="background:var(--accent-light);">🔔</div>
+          <div class="menu-text"><div class="t">Notifications</div><div class="s">Reminders & alerts</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-ico" style="background:var(--success-light);">🔒</div>
+          <div class="menu-text"><div class="t">Privacy & Security</div><div class="s">Data sharing, biometric lock</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-ico" style="background:var(--surface-2);">⚙️</div>
+          <div class="menu-text"><div class="t">Settings</div><div class="s">Language, theme, region</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Support Section -->
+    <div class="profile-section">
+      <h4>Support</h4>
+      <div class="menu-card">
+        <div class="menu-item">
+          <div class="menu-ico" style="background:var(--primary-pale);">💬</div>
+          <div class="menu-text"><div class="t">Help & Support</div><div class="s">FAQs, contact us</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-ico" style="background:var(--surface-2);">📄</div>
+          <div class="menu-text"><div class="t">Terms & Privacy Policy</div><div class="s">View our policies</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logout -->
+    <div class="logout-btn" style="margin-bottom:24px;">
+      🚪 Sign Out
+    </div>
+
+  </div>
+
+</div>
+
+<p class="screen-label">← Tap the tabs above or bottom navigation to switch screens →</p>
+
+<script>
+  function switchScreen(name, tabBtn) {
+    // Hide all screens
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + name).classList.add('active');
+
+    // Update tab buttons
+    if (tabBtn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      tabBtn.classList.add('active');
+    } else {
+      // Auto-activate the matching tab
+      const idx = { home: 0, doctors: 1, booking: 2, profile: 3 }[name];
+      if (idx !== undefined) {
+        document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      }
+    }
+    // Scroll to top of screen
+    const s = document.getElementById('screen-' + name);
+    if (s) s.scrollTop = 0;
+  }
+
+  function setActiveNav(id) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // Tab sync with tab buttons (pass tabBtn when calling from tab buttons)
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    const screens = ['home','doctors','booking','profile'];
+    btn.addEventListener('click', () => {
+      switchScreen(screens[i], btn);
+      const navIds = ['nav-home','nav-doctors','nav-booking','nav-profile'];
+      if (navIds[i]) setActiveNav(navIds[i]);
+    });
+  });
+
+  function selectCtype(el) {
+    el.closest('.consult-types').querySelectorAll('.ctype').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function selectDate(el) {
+    el.closest('.date-scroll').querySelectorAll('.date-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function selectSlot(el) {
+    if (el.classList.contains('booked')) return;
+    el.closest('.slot-grid').querySelectorAll('.slot:not(.booked)').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function showConfirm() {
+    document.getElementById('confirmOverlay').classList.add('show');
+  }
+
+  function closeConfirm() {
+    document.getElementById('confirmOverlay').classList.remove('show');
+    switchScreen('home', null);
+    setActiveNav('nav-home');
+  }
+
+  // Spec chip interaction
+  document.querySelectorAll('.spec-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.spec-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+
+  // Filter chip interaction
+  document.querySelectorAll('.chip-outline').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.chip-outline').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>

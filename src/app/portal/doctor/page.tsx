@@ -2,12 +2,21 @@
 
 import Link from "next/link";
 import { PhoneOff, Stethoscope, Video } from "lucide-react";
+import { useMemo } from "react";
 import { useDoctorPortalStore } from "@/store/doctorPortalStore";
+import { useDoctorVitals } from "@/hooks/useSupabaseIntegration";
 
 export default function DoctorCockpitPage() {
   const { queue, selectedCaseId, soap, updateSoap } = useDoctorPortalStore();
-
   const selected = queue.find((item) => item.id === selectedCaseId) ?? queue[0];
+  const { vitals, loading: vitalLoading } = useDoctorVitals(selected?.id ?? null);
+
+  const latestVitals = useMemo(() => {
+    if (!Array.isArray(vitals) || vitals.length === 0) {
+      return null;
+    }
+    return vitals[0];
+  }, [vitals]);
 
   return (
     <section className="space-y-3 pb-20 md:pb-0">
@@ -33,25 +42,34 @@ export default function DoctorCockpitPage() {
         <aside className="rounded-lg bg-white p-3 shadow-sm border border-slate-200/50">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-serif text-base font-semibold">Vitals</h2>
-            <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-primary">Live</span>
+            <span className={`text-[10px] font-bold uppercase tracking-widest ${vitalLoading ? 'text-slate-500' : 'text-primary'}`}>
+              {vitalLoading ? 'Loading...' : 'Live'}
+            </span>
           </div>
-
           <div className="space-y-2">
             <article className="rounded-md bg-slate-50 p-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-600">HR</p>
-              <p className="text-lg font-bold text-slate-900 mt-1">72 <span className="text-xs font-medium text-slate-500">BPM</span></p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-600">HR</p>
+              <p className="text-lg font-bold text-slate-900 mt-1">
+                {latestVitals?.heart_rate ?? '—'} <span className="text-xs font-medium text-slate-500">BPM</span>
+              </p>
             </article>
             <article className="rounded-md bg-slate-50 p-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-600">BP</p>
-              <p className="text-lg font-bold text-slate-900 mt-1">118/74 <span className="text-xs font-medium text-slate-500">mmHg</span></p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-600">BP</p>
+              <p className="text-lg font-bold text-slate-900 mt-1">
+                {latestVitals?.systolic && latestVitals?.diastolic ? `${latestVitals.systolic}/${latestVitals.diastolic}` : '—'} <span className="text-xs font-medium text-slate-500">mmHg</span>
+              </p>
             </article>
             <article className="rounded-md bg-slate-50 p-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-600">SpO2</p>
-              <p className="text-lg font-bold text-slate-900 mt-1">98 <span className="text-xs font-medium text-slate-500">%</span></p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-600">SpO2</p>
+              <p className="text-lg font-bold text-slate-900 mt-1">
+                {latestVitals?.spo2 ?? '—'} <span className="text-xs font-medium text-slate-500">%</span>
+              </p>
             </article>
             <article className="rounded-md bg-primary p-2.5 text-white">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.1em]">Note</p>
-              <p className="mt-1 text-[11px]">Stable. Monitor.</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest">Last Update</p>
+              <p className="mt-1 text-[11px]">
+                {latestVitals?.captured_at ? new Date(latestVitals.captured_at).toLocaleTimeString() : 'N/A'}
+              </p>
             </article>
           </div>
         </aside>

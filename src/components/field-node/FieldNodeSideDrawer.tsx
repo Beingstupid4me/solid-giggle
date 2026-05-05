@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { BellRing, CircleGauge, ListChecks, LogOut, Siren, Video, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePortalAuthStore } from "@/store/portalAuthStore";
+import { useGPSTracking } from "@/hooks/useSupabaseIntegration";
+import { useFieldNodePortalStore } from "@/store/fieldNodePortalStore";
 
 const links = [
   { href: "/portal/field-node", label: "Duty Dashboard", icon: Siren },
@@ -17,11 +20,39 @@ export function FieldNodeSideDrawer() {
   const pathname = usePathname();
   const router = useRouter();
   const logout = usePortalAuthStore((state) => state.logout);
+  const { dutyOn, activeConsultationId } = useFieldNodePortalStore();
+  const [gpsStatus, setGpsStatus] = useState<"active" | "idle" | "error">("idle");
+  const { startTracking } = useGPSTracking();
 
   const handleLogout = () => {
     logout();
     router.replace("/portal");
   };
+
+  // Initialize GPS tracking when duty is on
+  useEffect(() => {
+    if (!dutyOn || !activeConsultationId) {
+      setGpsStatus("idle");
+      return;
+    }
+
+    setGpsStatus("active");
+
+    // Start GPS tracking with interval (every 30 seconds)
+    const trackingInterval = setInterval(async () => {
+      try {
+        await startTracking(activeConsultationId);
+      } catch (err) {
+        console.error("GPS tracking error:", err);
+        setGpsStatus("error");
+      }
+    }, 30000); // 30 second intervals
+
+    // Try initial location immediately
+    startTracking(activeConsultationId).catch(() => setGpsStatus("error"));
+
+    return () => clearInterval(trackingInterval);
+  }, [dutyOn, activeConsultationId, startTracking]);
 
   return (
     <aside className="fixed right-0 top-0 hidden h-screen w-76 border-l border-slate-200/70 bg-white/92 p-5 backdrop-blur-xl xl:flex xl:flex-col">
@@ -60,7 +91,16 @@ export function FieldNodeSideDrawer() {
           <BellRing className="h-4 w-4" />
           <p className="text-xs font-bold uppercase tracking-[0.14em]">System status</p>
         </div>
-        <p className="text-sm leading-relaxed text-slate-600">Network latency 14ms • Dispatch feed is live.</p>
+        <p className="text-sm leading-relaxed text-slate-600">
+          {gpsStatus === "active" ? (
+            <span className="text-emerald-700">✓ GPS tracking active</span>
+          ) : gpsStatus === "error" ? (
+            <span className="text-red-700">✗ GPS tracking failed</span>
+          ) : (
+            "Go on duty to start GPS tracking"
+          )}{" "}
+          • Dispatch feed is live.
+        </p>
         <button
           type="button"
           onClick={handleLogout}

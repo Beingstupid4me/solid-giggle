@@ -2,14 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, ShieldCheck, X } from "lucide-react";
-import { PortalRole, usePortalAuthStore } from "@/store/portalAuthStore";
+import { ArrowRight, ShieldCheck, X, AlertCircle, Loader } from "lucide-react";
+import backendAPI from "@/lib/backendApi";
+import { usePortalAuthStore } from "@/store/portalAuthStore";
 
-const roleOptions: Array<{ value: PortalRole; label: string; hint: string }> = [
-  { value: "patient", label: "Patient", hint: "Use patient123" },
-  { value: "medic", label: "Field Node", hint: "Use medic123" },
-  { value: "doctor", label: "Doctor", hint: "Use doctor123" },
-  { value: "admin", label: "Admin", hint: "Use admin123" },
+export type PortalRole = "patient" | "medic" | "doctor" | "admin";
+
+const roleOptions: Array<{ value: PortalRole; label: string; description: string }> = [
+  { value: "patient", label: "Patient", description: "Patients booking medical consultations" },
+  { value: "medic", label: "Field Node", description: "Field medics on the ground" },
+  { value: "doctor", label: "Doctor", description: "Doctors reviewing cases" },
+  { value: "admin", label: "Admin", description: "System administrators" },
 ];
 
 const roleRouteMap: Record<PortalRole, string> = {
@@ -21,12 +24,19 @@ const roleRouteMap: Record<PortalRole, string> = {
 
 export function PortalLoginOverlay() {
   const router = useRouter();
-  const { login } = usePortalAuthStore();
+  const portalSignup = usePortalAuthStore((state) => state.signup);
+  const portalLogin = usePortalAuthStore((state) => state.login);
 
   const [role, setRole] = useState<PortalRole>("patient");
-  const [userId, setUserId] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [signUpPhone, setSignUpPhone] = useState("");
+  const [signUpEmail, setSignUpEmail] = useState("");
+  const [signUpName, setSignUpName] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const selectedRole = useMemo(() => roleOptions.find((item) => item.value === role), [role]);
 
@@ -50,17 +60,96 @@ export function PortalLoginOverlay() {
     return () => window.removeEventListener("keydown", onEsc);
   }, [handleClose]);
 
-  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const result = login({ role, userId, password });
+    setError(null);
 
-    if (!result.ok) {
-      setError(result.message ?? "Unable to login.");
+    if (isSignUp) {
+      // Sign-up validation
+      if (!signUpName || !signUpPhone || !signUpEmail || !password || !confirmPassword) {
+        setError("Please fill in all fields");
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError("Passwords do not match");
+        return;
+      }
+      if (password.length < 8) {
+        setError("Password must be at least 8 characters");
+        return;
+      }
+
+      // Signup through backend auth proxy.
+      setIsLoading(true);
+      try {
+        const response = await portalSignup({
+          phone: signUpPhone,
+          email: signUpEmail,
+          password,
+          fullName: signUpName,
+          role,
+        });
+        if (!response.ok) {
+          throw new Error(response.message || "Signup failed");
+        }
+
+        // Show success message
+        setError(null);
+        alert(
+          "Signup successful! You can now login with your email or phone and password."
+        );
+
+        // Reset form and switch to login
+        setIsSignUp(false);
+        setSignUpPhone("");
+        setSignUpEmail("");
+        setPassword("");
+        setConfirmPassword("");
+        setSignUpName("");
+        setIdentifier("");
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Signup failed";
+        setError(message);
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 
-    setError("");
-    router.push(roleRouteMap[role]);
+    // LOGIN - backend auth proxy + role validation
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      if (!identifier || !password) {
+        setError("Please enter email/phone and password");
+        return;
+      }
+
+      const loginResponse = await portalLogin({ identifier, password, role });
+      if (!loginResponse.ok) {
+        setError(loginResponse.message || "Login failed");
+        return;
+      }
+
+      const me = await backendAPI.getMe();
+      const userRole = ((me as any)?.data?.role || role) as PortalRole;
+
+      // Step 3: Validate that selected role matches user's actual role
+      if (userRole !== role) {
+        setError(`You are registered as a ${userRole || "user"}, not a ${role}`);
+        await backendAPI.logout();
+        return;
+      }
+
+      // Step 4: Role validated - navigate to role page
+      router.push(roleRouteMap[role]);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Login failed";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -100,7 +189,7 @@ export function PortalLoginOverlay() {
             {roleOptions.map((option) => (
               <div key={option.value} className="rounded-xl border border-slate-200 bg-white p-3">
                 <p className="text-sm font-semibold text-slate-800">{option.label}</p>
-                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">{option.hint}</p>
+                <p className="text-xs text-slate-500">{option.description}</p>
               </div>
             ))}
           </div>
@@ -108,60 +197,179 @@ export function PortalLoginOverlay() {
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-(--ds-shadow-md) md:p-6">
           <form onSubmit={onSubmit} className="space-y-4">
+            {/* Sign Up / Login Toggle */}
+            <div className="mb-6 flex gap-2 rounded-lg bg-slate-100 p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(false);
+                  setError(null);
+                }}
+                className={`flex-1 rounded-md py-2 font-semibold text-sm transition ${
+                  !isSignUp ? "bg-white text-primary shadow-sm" : "text-slate-600 hover:text-slate-800"
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(true);
+                  setError(null);
+                }}
+                className={`flex-1 rounded-md py-2 font-semibold text-sm transition ${
+                  isSignUp ? "bg-white text-primary shadow-sm" : "text-slate-600 hover:text-slate-800"
+                }`}
+              >
+                Sign Up
+              </button>
+            </div>
+
+            {/* Role Selection */}
             <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Role</label>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                {isSignUp ? "Choose Your Role" : "Role"}
+              </label>
               <div className="grid gap-2 sm:grid-cols-2">
                 {roleOptions.map((option) => (
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setRole(option.value)}
-                    className={`rounded-xl px-3 py-2 text-left ${
-                      role === option.value ? "bg-primary text-white" : "bg-slate-100 text-slate-600"
+                    onClick={() => {
+                      setRole(option.value);
+                      setError(null);
+                    }}
+                    className={`rounded-xl px-3 py-2 text-left transition ${
+                      role === option.value ? "bg-primary text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                   >
                     <p className="text-sm font-semibold">{option.label}</p>
-                    <p className={`text-[10px] uppercase tracking-[0.12em] ${role === option.value ? "text-white/80" : "text-slate-500"}`}>
-                      {option.hint}
+                    <p className={`text-xs ${role === option.value ? "text-white/80" : "text-slate-500"}`}>
+                      {option.description}
                     </p>
                   </button>
                 ))}
               </div>
             </div>
 
-            <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">User ID / Phone</label>
-              <input
-                value={userId}
-                onChange={(event) => setUserId(event.target.value)}
-                placeholder="Enter mobile or employee ID"
-                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-100/80 px-4 text-base text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-              />
-            </div>
+            {/* Sign Up Fields */}
+            {isSignUp && (
+              <>
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Full Name</label>
+                  <input
+                    type="text"
+                    value={signUpName}
+                    onChange={(event) => setSignUpName(event.target.value)}
+                    placeholder="Enter your full name"
+                    disabled={isLoading}
+                    className="h-12 w-full rounded-xl border border-slate-200 bg-slate-100/80 px-4 text-base text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
 
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={signUpPhone}
+                    onChange={(event) => setSignUpPhone(event.target.value)}
+                    placeholder="Enter your phone number"
+                    disabled={isLoading}
+                    className="h-12 w-full rounded-xl border border-slate-200 bg-slate-100/80 px-4 text-base text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Email Address</label>
+                  <input
+                    type="email"
+                    value={signUpEmail}
+                    onChange={(event) => setSignUpEmail(event.target.value)}
+                    placeholder="Enter your email"
+                    disabled={isLoading}
+                    className="h-12 w-full rounded-xl border border-slate-200 bg-slate-100/80 px-4 text-base text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Login Fields */}
+            {!isSignUp && (
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Email or Phone</label>
+                <input
+                  type="text"
+                  value={identifier}
+                  onChange={(event) => setIdentifier(event.target.value)}
+                  placeholder="Enter your email or phone"
+                  disabled={isLoading}
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-slate-100/80 px-4 text-base text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              </div>
+            )}
+
+            {/* Password Field */}
             <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Password</label>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                {isSignUp ? "Create Password (min 8 chars)" : "Password"}
+              </label>
               <input
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder={selectedRole?.hint ?? "Enter password"}
-                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-100/80 px-4 text-base text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                placeholder={isSignUp ? "At least 8 characters" : "Enter password"}
+                disabled={isLoading}
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-100/80 px-4 text-base text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
+
+            {/* Confirm Password (Sign Up Only) */}
+            {isSignUp && (
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Confirm Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Confirm your password"
+                  disabled={isLoading}
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-slate-100/80 px-4 text-base text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              </div>
+            )}
 
             <div className="rounded-xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">
               <p className="flex items-start gap-3">
                 <ShieldCheck className="mt-0.5 h-5 w-5 text-primary" />
-                Role credentials are mocked for MVP login. Real OTP and access controls will be connected to Supabase auth.
+                {isSignUp
+                  ? "Passwords are securely hashed by Supabase. You can manage your profile after account creation."
+                  : "All passwords are encrypted and securely stored. Your data is protected."}
               </p>
             </div>
 
-            {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
+            {error && (
+              <div className="flex gap-3 rounded-xl bg-red-50 border border-red-200 p-4">
+                <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+                <p className="text-sm font-medium text-red-700">{error}</p>
+              </div>
+            )}
 
-            <button type="submit" className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary text-base font-semibold text-white transition hover:bg-primary-dark">
-              <span>Enter Role Workspace</span>
-              <ArrowRight className="h-4 w-4" />
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary text-base font-semibold text-white transition hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <>
+                  <Loader className="h-4 w-4 animate-spin" />
+                  <span>{isSignUp ? "Creating account..." : "Logging in..."}</span>
+                </>
+              ) : (
+                <>
+                  <span>{isSignUp ? "Create Account & Enter" : "Enter Role Workspace"}</span>
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </button>
           </form>
 

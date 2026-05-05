@@ -1,5 +1,5 @@
-import { PatientSideDrawer } from "@/components/patient/PatientSideDrawer";
-import { PortalRoleGate } from "@/components/portal/PortalRoleGate";
+import { PatientBottomNav } from "@/components/patient/PatientBottomNav";
+import { PatientVaultProvider } from "@/components/patient/PatientVaultProvider";
 
 export default function PortalPatientLayout({
   children,
@@ -7,11 +7,11 @@ export default function PortalPatientLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <PortalRoleGate allowedRole="patient">
-      <div className="portal-app min-h-screen bg-background-light text-text-main">
-        <PatientSideDrawer />
-        <div className="mx-auto w-full max-w-7xl bg-background-light md:pl-64">{children}</div>
-      </div>
-    </PortalRoleGate>
+    <div className="min-h-screen bg-background-light text-text-main pb-20 md:pb-0">
+      <PatientVaultProvider>
+        {children}
+      </PatientVaultProvider>
+      <PatientBottomNav />
+    </div>
   );
 }

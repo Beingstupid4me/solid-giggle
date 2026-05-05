@@ -6,6 +6,8 @@ import { BookOpenText, Clock3, LogOut, MenuSquare, Moon, Plus, Stethoscope, Sun,
 import { cn } from "@/lib/utils";
 import { usePortalAuthStore } from "@/store/portalAuthStore";
 import { usePortalTheme } from "@/hooks/usePortalTheme";
+import { useLogout } from "@/hooks/useSupabaseIntegration";
+import { useState } from "react";
 
 const sideNav = [
   { href: "/portal/doctor/queue", label: "Queue", icon: MenuSquare },
@@ -24,9 +26,11 @@ export function DoctorShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const logout = usePortalAuthStore((state) => state.logout);
   const { isDark, toggleTheme } = usePortalTheme();
+  const { logout: supabaseLogout, loading } = useLogout();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await supabaseLogout();
+    logout(); // Also clear Zustand store
     router.replace("/portal");
   };
 
@@ -66,10 +70,11 @@ export function DoctorShell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-100 py-2 text-sm font-medium text-slate-700"
+            disabled={loading}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-100 py-2 text-sm font-medium text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             <LogOut className="h-4 w-4" />
-            Logout
+            {loading ? 'Logging out...' : 'Logout'}
           </button>
         </div>
       </aside>
