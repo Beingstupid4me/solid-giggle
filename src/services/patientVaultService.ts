@@ -59,6 +59,7 @@ export interface VitalsRow {
 
 export interface ProfileRow {
   id: string;
+  email?: string | null;
   phone: string;
   full_name: string;
   role: string;
@@ -231,7 +232,7 @@ export async function getActiveConsultation(
 export async function getPatientProfile(userId: string): Promise<ProfileRow | null> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, phone, full_name, role")
+    .select("id, email, phone, full_name, role")
     .eq("id", userId)
     .single();
 
@@ -249,7 +250,7 @@ export async function getPatientProfile(userId: string): Promise<ProfileRow | nu
 export async function getAllPatientProfiles(): Promise<ProfileRow[]> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, phone, full_name, role")
+    .select("id, email, phone, full_name, role")
     .eq("role", "patient");
 
   if (error) {

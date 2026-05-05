@@ -16,12 +16,22 @@ import { useDoctorPortalStore } from '@/store/doctorPortalStore';
 import { useFieldNodePortalStore } from '@/store/fieldNodePortalStore';
 import { usePortalAuthStore } from '@/store/portalAuthStore';
 
+export const useSupabaseIntegration = () => ({
+  doctorServices,
+  fieldNodeServices,
+  patientServices,
+  adminServices,
+  authServices,
+  realtimeServices,
+});
+
 /**
  * DOCTOR HOOKS
  */
 
 export const useDoctorQueue = () => {
-  const { queue: storeQueue } = useDoctorPortalStore();
+  const cases = useDoctorPortalStore((state) => state.queue);
+  const setQueue = useDoctorPortalStore((state) => state.setQueue);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,8 +42,7 @@ export const useDoctorQueue = () => {
       const result = await doctorServices.getQueue();
       if (!result.success) throw new Error(result.error);
 
-      // TODO: Transform data and update store
-      // For now, we'll keep the dummy data until schema is fully in place
+      setQueue(result.data as any[]);
       return result.data;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error fetching queue';
@@ -48,7 +57,7 @@ export const useDoctorQueue = () => {
     fetchQueue();
   }, [fetchQueue]);
 
-  return { loading, error, fetchQueue };
+  return { cases, loading, error, fetchQueue, refetch: fetchQueue };
 };
 
 export const useDoctorVitals = (consultationId?: string | null) => {
@@ -134,7 +143,7 @@ export const useSaveSOAPNotes = () => {
     []
   );
 
-  return { saveNotes, loading, error };
+  return { saveNotes, saveSOAPNotes: saveNotes, loading, error };
 };
 
 export const useCloseCase = () => {
@@ -168,19 +177,42 @@ export const useCloseCase = () => {
  */
 
 export const useDispatchQueue = () => {
-  const setQueue = useFieldNodePortalStore((state) => state.queue);
+  const cases = useFieldNodePortalStore((state) => state.queue);
+  const setQueue = useFieldNodePortalStore((state) => state.setQueue);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchQueue = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const result = await fieldNodeServices.getDispatchQueue();
       if (result.success) {
-        // TODO: Transform and update store
-        return result.data;
+        const normalized = (result.data || []).map((item: any) => ({
+          id: item.id,
+          patientName: item.consultations?.[0]?.profiles?.[0]?.full_name || item.consultations?.[0]?.patient_name || 'Patient',
+          patient_name: item.consultations?.[0]?.profiles?.[0]?.full_name || item.consultations?.[0]?.patient_name || 'Patient',
+          complaint: item.consultations?.[0]?.address_line || 'Dispatch alert',
+          location: item.consultations?.[0]?.address_line || 'TBD',
+          distanceKm: 0,
+          receivedLabel: item.created_at ? new Date(item.created_at).toLocaleTimeString() : 'Received now',
+          severity: 'routine',
+          priorityLevel: 5,
+          priority: item.priority ? String(item.priority) : 'normal',
+          age: 0,
+          accepted: item.status === 'accepted',
+          status: item.status,
+          created_at: item.created_at,
+        }));
+        setQueue(normalized);
+        return normalized;
       }
+      throw new Error(result.error || 'Error fetching dispatch queue');
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error fetching dispatch queue';
+      setError(message);
       console.error('Error fetching dispatch queue:', err);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -197,7 +229,7 @@ export const useDispatchQueue = () => {
     };
   }, [fetchQueue]);
 
-  return { loading, fetchQueue };
+  return { cases, loading, error, fetchQueue, refetch: fetchQueue };
 };
 
 export const useAcceptCase = () => {
@@ -259,7 +291,7 @@ export const useSubmitVitals = () => {
   return { submitVitals, loading, error };
 };
 
-export const useGPSTracking = (consultationId: string | null) => {
+export const useGPSTracking = (consultationId?: string | null) => {
   const [loading, setLoading] = useState(false);
 
   const updateGPS = useCallback(
@@ -273,6 +305,39 @@ export const useGPSTracking = (consultationId: string | null) => {
       } finally {
         setLoading(false);
       }
+    },
+    [consultationId]
+  );
+
+  const startTracking = useCallback(
+    async (targetConsultationId?: string | null) => {
+      const id = targetConsultationId ?? consultationId;
+      if (!id) {
+        return;
+      }
+
+      const nav = navigator as Navigator & { getBattery?: () => Promise<{ level: number }> };
+      if (!navigator.geolocation) {
+        throw new Error('Geolocation not available');
+      }
+
+      return new Promise<void>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            void fieldNodeServices
+              .updateGPS(id, {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+                battery_percent: nav.getBattery ? 100 : 100,
+              })
+              .then(() => resolve())
+              .catch(reject);
+          },
+          (error) => reject(error),
+          { enableHighAccuracy: true, maximumAge: 30000 }
+        );
+      });
     },
     [consultationId]
   );
@@ -306,7 +371,7 @@ export const useGPSTracking = (consultationId: string | null) => {
     };
   }, [consultationId, updateGPS]);
 
-  return { updateGPS, loading };
+  return { updateGPS, startTracking, loading };
 };
 
 /**
@@ -441,8 +506,10 @@ export const useAllCases = () => {
         setCases(result.data);
         setTotal(result.total);
       }
+      return result;
     } catch (err) {
       console.error('Error fetching cases:', err);
+      return { success: false, error: err instanceof Error ? err.message : 'Error fetching cases', data: [], total: 0 };
     } finally {
       setLoading(false);
     }
@@ -452,32 +519,62 @@ export const useAllCases = () => {
     fetchCases();
   }, [fetchCases]);
 
-  return { cases, loading, total, fetchCases };
+  return { cases, loading, total, fetchCases, getAllCases: fetchCases };
+};
+
+export const useGetActiveConsultation = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const getActiveConsultation = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fieldNodeServices.getActiveConsultation();
+      if (!result.success) throw new Error(result.error);
+
+      return {
+        success: true,
+        data: result.data ? [result.data] : [],
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error fetching active consultation';
+      setError(message);
+      return { success: false, error: message, data: [] };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { getActiveConsultation, loading, error };
 };
 
 export const useAvailableMedics = () => {
   const [medics, setMedics] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchMedics = async () => {
-      setLoading(true);
-      try {
-        const result = await adminServices.getAvailableMedics();
-        if (result.success) {
-          setMedics(result.data);
-        }
-      } catch (err) {
-        console.error('Error fetching medics:', err);
-      } finally {
-        setLoading(false);
+  const getAvailableMedics = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await adminServices.getAvailableMedics();
+      if (result.success) {
+        setMedics(result.data);
       }
-    };
-
-    fetchMedics();
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error fetching medics';
+      console.error('Error fetching medics:', err);
+      return { success: false, error: message, data: [] };
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { medics, loading };
+  useEffect(() => {
+    void getAvailableMedics();
+  }, [getAvailableMedics]);
+
+  return { medics, loading, getAvailableMedics };
 };
 
 export const useForceAssignCase = () => {
@@ -503,7 +600,14 @@ export const useForceAssignCase = () => {
     []
   );
 
-  return { assignCase, loading, error };
+  const forceAssignCase = useCallback(
+    async (consultationId: string, medicId: string, reason = 'Manual override') => {
+      return assignCase(consultationId, medicId, reason);
+    },
+    [assignCase]
+  );
+
+  return { assignCase, forceAssignCase, loading, error };
 };
 
 /**

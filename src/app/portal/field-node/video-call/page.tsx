@@ -57,17 +57,21 @@ export default function FieldVideoCallPage() {
     loadConsultation();
 
     // Subscribe to consultation updates
-    const subscription = supabaseBrowser
-      .from("consultations")
-      .on("postgres_changes", { event: "*", schema: "public", table: "consultations", filter: `id=eq.${activeConsultationId}` }, (payload) => {
-        if (payload.new) {
-          setConsultation((prev) => ({ ...prev, ...payload.new }));
+    const channel = supabaseBrowser
+      .channel(`field-node-video-call-${activeConsultationId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "consultations", filter: `id=eq.${activeConsultationId}` },
+        (payload) => {
+          if (payload.new) {
+            setConsultation((prev) => ({ ...prev, ...payload.new }));
+          }
         }
-      })
+      )
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      supabaseBrowser.removeChannel(channel);
     };
   }, [activeConsultationId, getActiveConsultation]);
 

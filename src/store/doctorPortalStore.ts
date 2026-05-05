@@ -7,12 +7,16 @@ type RiskTag = "stable" | "monitor" | "escalate";
 interface DoctorQueueCase {
   id: string;
   patientName: string;
+  patient_name?: string;
   severity: "routine" | "urgent" | "critical";
   patientCode: string;
   note: string;
   column: QueueColumn;
   waitingLabel: string;
   medicName?: string;
+  status?: string;
+  priority?: string;
+  created_at?: string;
 }
 
 interface SoapState {
@@ -27,6 +31,7 @@ interface DoctorPortalState {
   selectedCaseId: string;
   riskTag: RiskTag;
   soap: SoapState;
+  setQueue: (queue: DoctorQueueCase[]) => void;
   setSelectedCaseId: (id: string) => void;
   moveCase: (id: string, column: QueueColumn) => void;
   setRiskTag: (risk: RiskTag) => void;
@@ -105,6 +110,8 @@ export const useDoctorPortalStore = create<DoctorPortalState>()(
       selectedCaseId: "doc-003",
       riskTag: "monitor",
       soap: initialSoap,
+
+      setQueue: (queue) => set({ queue }),
 
       setSelectedCaseId: (id) => set({ selectedCaseId: id }),
 

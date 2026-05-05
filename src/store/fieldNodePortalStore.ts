@@ -6,13 +6,18 @@ export type CaseSeverity = "critical" | "urgent" | "routine";
 export interface DispatchCase {
   id: string;
   patientName: string;
+  patient_name?: string;
   complaint: string;
+  status?: string;
+  location?: string;
   distanceKm: number;
   receivedLabel: string;
   severity: CaseSeverity;
   priorityLevel: 1 | 3 | 5;
+  priority?: string;
   age: number;
   accepted: boolean;
+  created_at?: string;
 }
 
 export interface VitalsForm {
@@ -38,6 +43,7 @@ interface FieldNodePortalState {
   activeConsultationId: string | null;
   queue: DispatchCase[];
   vitals: VitalsForm;
+  setQueue: (queue: DispatchCase[]) => void;
   toggleDuty: () => void;
   setNetworkOnline: (online: boolean) => void;
   acceptCase: (caseId: string) => void;
@@ -108,6 +114,8 @@ export const useFieldNodePortalStore = create<FieldNodePortalState>()(
       activeConsultationId: "case-001",
       queue: initialQueue,
       vitals: initialVitals,
+
+      setQueue: (queue) => set({ queue }),
 
       toggleDuty: () =>
         set((state) => ({

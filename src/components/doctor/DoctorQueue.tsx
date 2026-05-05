@@ -65,7 +65,7 @@ export default function DoctorQueue() {
   const totalPages = Math.ceil(filteredCases.length / itemsPerPage);
 
   // Get filter options from data
-  const statuses = ['all', ...new Set(cases.map(c => c.status))];
+  const statuses = ['all', ...new Set(cases.map((c) => c.status).filter((status): status is string => Boolean(status)))];
 
   return (
     <div className="p-6 space-y-6">
@@ -148,7 +148,7 @@ export default function DoctorQueue() {
               <div>
                 <p className="text-gray-500 text-xs">Created</p>
                 <p className="font-medium text-gray-900">
-                  {new Date(caseItem.created_at).toLocaleDateString()}
+                  {new Date(caseItem.created_at ?? Date.now()).toLocaleDateString()}
                 </p>
               </div>
             </div>

@@ -173,7 +173,7 @@ export default function FieldNodeJobAlerts() {
                   <div>
                     <p className="text-gray-500 text-xs">Assigned</p>
                     <p className="font-medium text-gray-900">
-                      {new Date(caseItem.created_at).toLocaleTimeString()}
+                      {new Date(caseItem.created_at ?? Date.now()).toLocaleTimeString()}
                     </p>
                   </div>
                 </div>

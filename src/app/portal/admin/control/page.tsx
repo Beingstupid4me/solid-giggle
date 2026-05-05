@@ -1,288 +1,105 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import {
-  Activity,
-  Bell,
-  Moon,
-  RefreshCw,
-  Sun,
-  UserPlus,
-  Users,
-  Volume2,
-  VolumeX,
-} from "lucide-react";
-import { supabaseBrowser } from "@/lib/supabase";
-import { usePortalAuthStore } from "@/store/portalAuthStore";
-import { usePortalTheme } from "@/hooks/usePortalTheme";
+import { useEffect, useState } from "react";
+import { Activity, RefreshCw, Users } from "lucide-react";
 import { useAllCases } from "@/hooks/useSupabaseIntegration";
 
-type ControlTab = "pulse" | "field";
-
-interface ConsultationData {
+type ControlCase = {
   id: string;
   status: string;
-  profiles?: { full_name: string };
-  chief_complaint: string;
-  created_at: string;
-}
+  created_at?: string;
+  doctor_name?: string;
+  profiles?: { full_name?: string };
+  service_type?: string;
+};
 
 export default function AdminControlPage() {
-  const session = usePortalAuthStore((state) => state.session);
-  const { isDark, toggleTheme } = usePortalTheme();
-
-  const [activeTab, setActiveTab] = useState<ControlTab>("pulse");
-  const [consultations, setConsultations] = useState<ConsultationData[]>([]);
+  const [cases, setCases] = useState<ControlCase[]>([]);
   const [loading, setLoading] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [newCount, setNewCount] = useState(0);
-
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string>("");
   const { getAllCases } = useAllCases();
 
+  const loadCases = async () => {
+    setLoading(true);
+    const result = await getAllCases({ limit: 50 });
+    if (result?.data) {
+      setCases(result.data as ControlCase[]);
+      setLastUpdated(new Date().toLocaleTimeString());
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    audioRef.current = new Audio("/notification.mp3");
-    audioRef.current.volume = 0.5;
+    void loadCases();
   }, []);
 
-  const playNotificationSound = useCallback(() => {
-    if (soundEnabled && audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {
-        // Autoplay may be blocked by browser policy
-      });
-    }
-  }, [soundEnabled]);
-
-  const fetchConsultations = useCallback(async () => {
-    try {
-      const result = await getAllCases({ limit: 50 });
-      if (result && result.data) {
-        setConsultations(result.data);
-        setLoading(false);
-      }
-    } catch (err) {
-      console.error("Failed to fetch consultations:", err);
-      setLoading(false);
-    }
-  }, [getAllCases]);
-
-  useEffect(() => {
-    fetchConsultations();
-  }, [fetchConsultations]);
-
-  // Real-time subscription
-  useEffect(() => {
-    const channel = supabaseBrowser
-      .channel("admin-control-realtime")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "consultations" },
-        (payload) => {
-          setConsultations((prev) => [payload.new as ConsultationData, ...prev]);
-          setNewCount((prev) => prev + 1);
-          playNotificationSound();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "consultations" },
-        (payload) => {
-          setConsultations((prev) =>
-            prev.map((item) => (item.id === payload.new.id ? (payload.new as ConsultationData) : item))
-          );
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabaseBrowser.removeChannel(channel);
-    };
-  }, [playNotificationSound]);
-
-  const handleDispatch = (booking: BookingRow) => {
-    setSelectedBooking(booking);
-    setIsDispatchModalOpen(true);
-  };
-
-  const handleDispatchComplete = async (bookingId: string, paramedicId: string) => {
-    const { error } = await supabase
-      .from("bookings")
-      .update({
-        status: "DISPATCHED",
-        assigned_paramedic_id: paramedicId,
-        dispatched_at: new Date().toISOString(),
-      })
-      .eq("id", bookingId);
-
-    if (!error) {
-      setIsDispatchModalOpen(false);
-      setSelectedBooking(null);
-    }
-
-    return { success: !error, error: error?.message };
-  };
-
-  const handleEndVisitClick = (bookingId: string) => {
-    const booking = bookings.find((item) => item.id === bookingId);
-    if (!booking) {
-      return;
-    }
-
-    setSelectedBooking(booking);
-    setIsCompleteModalOpen(true);
-  };
-
-  const handleCompleteConfirm = async (bookingId: string) => {
-    const { error } = await supabase.from("bookings").update({ status: "COMPLETED" }).eq("id", bookingId);
-
-    if (!error) {
-      fetchData();
-    }
-
-    return { success: !error, error: error?.message };
-  };
-
-  const pendingCount = bookings.filter((item) => item.status === "PENDING").length;
-  const activeParamedics = paramedics.filter((item) => item.is_active).length;
+  const pendingCount = cases.filter((item) => item.status === "pending").length;
+  const activeCount = cases.filter((item) => item.status !== "completed" && item.status !== "cancelled").length;
 
   return (
-    <section className={`${isDark ? "bg-slate-900" : "bg-white"}`}>
-      <div className="flex items-center justify-end gap-1 px-4 py-3 md:gap-2 md:px-6 md:py-3">
-        <div className="flex items-center gap-1 md:gap-2">
-          <button
-            type="button"
-            onClick={() => setSoundEnabled((value) => !value)}
-            className={`rounded-md p-1.5 md:p-2 text-sm transition ${isDark ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"}`}
-            aria-label={soundEnabled ? "Mute notifications" : "Enable notifications"}
-          >
-            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-          </button>
-
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className={`rounded-md p-1.5 md:p-2 text-sm transition ${isDark ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"}`}
-            aria-label="Toggle theme"
-          >
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
-
-          <button
-            type="button"
-            onClick={fetchData}
-            className={`rounded-md p-1.5 md:p-2 text-sm transition ${isDark ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"}`}
-            aria-label="Refresh data"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </button>
-
-          {isMasterAdmin ? (
-            <button
-              type="button"
-              onClick={() => setIsAddAdminModalOpen(true)}
-              className={`rounded-md p-1.5 md:p-2 text-sm transition ${isDark ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"}`}
-              aria-label="Add admin"
-            >
-              <UserPlus className="h-4 w-4" />
-            </button>
-          ) : null}
+    <section className="space-y-5 rounded-2xl bg-white p-4 shadow-(--ds-shadow-sm) md:p-6">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">Admin Control</p>
+          <h1 className="mt-2 font-serif text-2xl font-semibold text-slate-900 md:text-3xl">Live queue overview</h1>
+          <p className="mt-2 text-sm text-slate-600">Operational summary of the latest cases surfaced from the shared admin hook.</p>
         </div>
+        <button
+          type="button"
+          onClick={() => void loadCases()}
+          className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold uppercase tracking-[0.12em] text-white transition hover:bg-primary/90"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh
+        </button>
+      </header>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <article className="rounded-xl bg-slate-50 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Total Cases</p>
+          <p className="mt-2 font-serif text-3xl font-semibold text-slate-900">{cases.length}</p>
+        </article>
+        <article className="rounded-xl bg-red-50 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-red-700">Pending</p>
+          <p className="mt-2 font-serif text-3xl font-semibold text-red-700">{pendingCount}</p>
+        </article>
+        <article className="rounded-xl bg-emerald-50 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">Active</p>
+          <p className="mt-2 font-serif text-3xl font-semibold text-emerald-700">{activeCount}</p>
+        </article>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 px-4 py-2 md:px-6 md:py-3 text-[12px]">
-        <div className={`inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 font-semibold ${isDark ? "bg-red-500/15 text-red-400" : "bg-red-100 text-red-700"}`}>
-          <span className={`h-1.5 w-1.5 animate-pulse rounded-full ${isDark ? "bg-red-400" : "bg-red-700"}`} />
-          {pendingCount} Pending
-        </div>
-        <div className={`inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 font-semibold ${isDark ? "bg-emerald-500/15 text-emerald-400" : "bg-emerald-100 text-emerald-700"}`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${isDark ? "bg-emerald-400" : "bg-emerald-700"}`} />
-          {activeParamedics} On Duty
-        </div>
-        {newBookingCount > 0 ? (
-          <div className={`inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 font-semibold ${isDark ? "bg-primary/15 text-primary" : "bg-primary/10 text-primary"}`}>
-            <Bell className="h-3 w-3" />
-            {newBookingCount} Alerts
+      <div className="flex items-center gap-2 text-xs text-slate-500">
+        <Users className="h-4 w-4" />
+        <span>{loading ? "Loading cases..." : `Last updated ${lastUpdated || "just now"}`}</span>
+      </div>
+
+      <section className="overflow-hidden rounded-xl border border-slate-200">
+        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <Activity className="h-4 w-4 text-primary" />
+            Recent cases
           </div>
-        ) : null}
-      </div>
+        </div>
 
-      <nav className={`flex gap-1 px-4 py-2 md:px-6 md:py-3`}>
-        <button
-          type="button"
-          onClick={() => setActiveTab("pulse")}
-          className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.1em] transition ${
-            activeTab === "pulse"
-              ? isDark
-                ? "bg-slate-800 text-white"
-                : "bg-slate-100 text-primary"
-              : isDark
-                ? "text-slate-400 hover:text-slate-300"
-                : "text-slate-600 hover:text-slate-700"
-          }`}
-        >
-          <Activity className="h-3.5 w-3.5" />
-          Live Pulse
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("field")}
-          className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.1em] transition ${
-            activeTab === "field"
-              ? isDark
-                ? "bg-slate-800 text-white"
-                : "bg-slate-100 text-primary"
-              : isDark
-                ? "text-slate-400 hover:text-slate-300"
-                : "text-slate-600 hover:text-slate-700"
-          }`}
-        >
-          <Users className="h-3.5 w-3.5" />
-          Field Force
-        </button>
-      </nav>
-
-      <div className="px-4 py-3 md:px-6 md:py-4">
-        {activeTab === "pulse" ? (
-          <LivePulseMonitor
-            bookings={bookings}
-            paramedics={paramedics}
-            onDispatch={handleDispatch}
-            onComplete={handleEndVisitClick}
-            isDark={isDark}
-          />
-        ) : (
-          <FieldForce paramedics={paramedics} onUpdate={fetchData} isDark={isDark} />
-        )}
-      </div>
-
-      <DispatchModal
-        isOpen={isDispatchModalOpen}
-        onClose={() => {
-          setIsDispatchModalOpen(false);
-          setSelectedBooking(null);
-        }}
-        booking={selectedBooking}
-        paramedics={paramedics.filter((item) => item.is_active)}
-        onDispatch={handleDispatchComplete}
-        isDark={isDark}
-      />
-
-      <CompleteVisitModal
-        isOpen={isCompleteModalOpen}
-        onClose={() => {
-          setIsCompleteModalOpen(false);
-          setSelectedBooking(null);
-        }}
-        booking={selectedBooking}
-        onConfirm={handleCompleteConfirm}
-        isDark={isDark}
-      />
-
-      {isMasterAdmin ? (
-        <AddAdminModal isOpen={isAddAdminModalOpen} onClose={() => setIsAddAdminModalOpen(false)} isDark={isDark} />
-      ) : null}
+        <div className="divide-y divide-slate-200">
+          {cases.length === 0 ? (
+            <div className="px-4 py-8 text-center text-sm text-slate-500">No cases available</div>
+          ) : (
+            cases.slice(0, 10).map((item) => (
+              <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-4">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">{item.profiles?.full_name ?? "Patient"}</p>
+                  <p className="text-xs text-slate-500">{item.id} · {item.service_type ?? "case"}</p>
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">
+                  {item.status}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
     </section>
   );
 }
