@@ -99,14 +99,6 @@ export default function AdminControlPage() {
       supabaseBrowser.removeChannel(channel);
     };
   }, [playNotificationSound]);
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [fetchData]);
 
   const handleDispatch = (booking: BookingRow) => {
     setSelectedBooking(booking);
